@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>🌡️ Wethr Data Fetcher</title>
+<style>
+/* ── THEMES ─────────────────────────────────────── */
+:root[data-theme="dark"]{
+  --bg0:#050b18; --bg1:#071432; --card:#0b1b34;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
+  --text:#e9f2ff; --muted:#a9b7d6; --dim:#6b7fa0;
+  --accent:#7aa2ff; --accent2:#ffd16f;
+  --good:#4de39a; --warn:#ffcc66; --bad:#ff6b6b;
+  --btn:rgba(255,255,255,.06);
+  --shadow:0 12px 30px rgba(0,0,0,.45);
+}
+:root[data-theme="blue"]{
+  --bg0:#050f1e; --bg1:#091a38; --card:#0c2040;
+  --line:rgba(79,195,247,.12); --line2:rgba(79,195,247,.06);
+  --text:#dff0ff; --muted:#7ab8e0; --dim:#4a7a9b;
+  --accent:#4fc3f7; --accent2:#ffd54f;
+  --good:#69f0ae; --warn:#ffd54f; --bad:#ff5252;
+  --btn:rgba(79,195,247,.08);
+  --shadow:0 12px 30px rgba(0,0,0,.55);
+}
+
+/* ── RESET ──────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+body{
+  background:radial-gradient(900px 700px at 10% -10%,rgba(122,162,255,.18),transparent 55%),
+             radial-gradient(900px 700px at 110% 10%,rgba(255,209,111,.10),transparent 55%),
+             linear-gradient(180deg,var(--bg0),var(--bg1));
+  color:var(--text);min-height:100vh;
+}
+:root[data-theme="blue"] body{
+  background:radial-gradient(900px 700px at 10% -10%,rgba(79,195,247,.15),transparent 55%),
+             radial-gradient(900px 700px at 110% 10%,rgba(255,213,79,.10),transparent 55%),
+             linear-gradient(180deg,var(--bg0),var(--bg1));
+}
+
+/* ── LAYOUT ─────────────────────────────────────── */
+.wrap{max-width:680px;margin:0 auto;padding:12px 12px 40px}
+
+/* ── HEADER ─────────────────────────────────────── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  padding:12px 14px;border-radius:18px;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);
+  box-shadow:var(--shadow);backdrop-filter:blur(12px);margin-bottom:12px;
+}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;
+  background:linear-gradient(135deg,rgba(122,162,255,.22),rgba(255,209,111,.12));
+  border:1px solid rgba(122,162,255,.25);}
+.title{font-size:15px;font-weight:700;letter-spacing:.2px}
+.subtitle{font-size:11.5px;color:var(--muted);margin-top:2px}
+.header-right{display:flex;gap:8px;align-items:center}
+.theme-btn{
+  cursor:pointer;padding:7px 12px;border-radius:999px;font-size:12px;font-weight:700;
+  border:1px solid var(--line);background:var(--btn);color:var(--muted);transition:all .2s;
+}
+.theme-btn:hover{border-color:var(--accent);color:var(--text)}
+
+/* ── TABS ───────────────────────────────────────── */
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{
+  cursor:pointer;padding:9px 16px;border-radius:999px;font-size:12.5px;font-weight:700;
+  border:1px solid var(--line);background:var(--btn);color:var(--muted);transition:all .2s;
+}
+.tab.active{
+  color:var(--text);border-color:rgba(122,162,255,.4);
+  background:linear-gradient(90deg,rgba(122,162,255,.15),rgba(255,209,111,.07));
+}
+
+/* ── CARDS ──────────────────────────────────────── */
+.card{
+  background:rgba(255,255,255,.035);border:1px solid var(--line);
+  border-radius:20px;box-shadow:var(--shadow);padding:14px;margin-bottom:12px;
+}
+.card-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.divider{height:1px;background:var(--line2);margin:12px 0}
+
+/* ── CLOCKS ─────────────────────────────────────── */
+.clocks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:500px){.clocks{grid-template-columns:repeat(4,1fr)}}
+.clock-box{
+  border:1px solid var(--line);border-radius:14px;padding:9px 10px;
+  background:rgba(0,0,0,.12);text-align:center;
+}
+.clock-city{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.clock-time{font-size:17px;font-weight:800;color:var(--text);margin:3px 0;font-variant-numeric:tabular-nums}
+.clock-date{font-size:11px;color:var(--dim)}
+.clock-box.highlight{border-color:rgba(122,162,255,.3);background:rgba(122,162,255,.06)}
+
+/* ── API KEY ────────────────────────────────────── */
+.key-row{display:flex;gap:8px;align-items:stretch}
+.key-input{
+  flex:1;padding:10px 12px;border-radius:14px;
+  border:1px solid var(--line);background:rgba(0,0,0,.15);
+  color:var(--text);font-size:13px;outline:none;font-family:ui-monospace,monospace;
+  transition:border-color .2s;
+}
+.key-input:focus{border-color:var(--accent)}
+.key-input::placeholder{color:var(--dim)}
+.toggle-key{
+  cursor:pointer;padding:10px 12px;border-radius:14px;
+  border:1px solid var(--line);background:var(--btn);
+  color:var(--muted);font-size:13px;transition:all .2s;white-space:nowrap;
+}
+.toggle-key:hover{border-color:var(--accent);color:var(--text)}
+
+/* ── SELECTORS ──────────────────────────────────── */
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg-btn{
+  cursor:pointer;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;
+  border:1px solid var(--line);background:var(--btn);color:var(--muted);transition:all .2s;
+}
+.seg-btn.active{
+  color:var(--text);border-color:var(--accent);
+  background:linear-gradient(90deg,rgba(122,162,255,.18),rgba(255,209,111,.08));
+}
+.seg-btn:hover:not(.active){border-color:var(--accent);color:var(--text)}
+
+/* ── FETCH BUTTON ───────────────────────────────── */
+.fetch-btn{
+  width:100%;padding:13px;border-radius:16px;font-size:14px;font-weight:800;
+  cursor:pointer;border:none;letter-spacing:.3px;transition:all .25s;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#050b18;box-shadow:0 4px 20px rgba(122,162,255,.3);
+}
+.fetch-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(122,162,255,.4)}
+.fetch-btn:active{transform:translateY(0)}
+.fetch-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ── RESULTS ────────────────────────────────────── */
+.results-wrap{margin-top:12px}
+.city-section{margin-bottom:16px}
+.city-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-radius:14px;margin-bottom:8px;
+  background:linear-gradient(135deg,rgba(122,162,255,.12),rgba(255,209,111,.06));
+  border:1px solid rgba(122,162,255,.2);
+}
+.city-name{font-size:14px;font-weight:800}
+.city-wu-link{
+  font-size:12px;color:var(--accent);text-decoration:none;padding:4px 10px;
+  border-radius:999px;border:1px solid rgba(122,162,255,.3);
+  background:rgba(122,162,255,.08);transition:all .2s;
+}
+.city-wu-link:hover{background:rgba(122,162,255,.18)}
+
+/* ── LIVE HIGH ──────────────────────────────────── */
+.live-box{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  padding:10px 14px;border-radius:14px;
+  border:1px solid rgba(77,227,154,.2);background:rgba(77,227,154,.05);margin-bottom:8px;
+}
+.live-label{font-size:11.5px;color:var(--good);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.live-temp{font-size:24px;font-weight:900;color:var(--good)}
+.live-meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* ── MODEL ROWS ─────────────────────────────────── */
+.model-row{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  padding:10px 12px;border-radius:13px;border:1px solid var(--line);
+  background:rgba(0,0,0,.10);margin-bottom:6px;
+}
+.model-left{}
+.model-name{font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+.model-meta{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.5}
+.model-temp{font-size:22px;font-weight:900;color:var(--text);white-space:nowrap}
+.model-row.hrrr-row{border-color:rgba(122,162,255,.2)}
+.model-row.ecmwf-row{border-color:rgba(255,209,111,.2)}
+.model-row.nbm-row{border-color:rgba(77,227,154,.15)}
+.model-row.gfs-row{border-color:rgba(169,183,214,.15)}
+
+/* ── ECMWF SHIFT ────────────────────────────────── */
+.shift-box{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;margin-top:4px;
+}
+.shift-box.good{background:rgba(77,227,154,.15);color:var(--good);border:1px solid rgba(77,227,154,.2)}
+.shift-box.warn{background:rgba(255,204,102,.12);color:var(--warn);border:1px solid rgba(255,204,102,.2)}
+.shift-box.bad{background:rgba(255,107,107,.12);color:var(--bad);border:1px solid rgba(255,107,107,.2)}
+
+/* ── EVOLUTION ──────────────────────────────────── */
+.evo-box{
+  padding:10px 14px;border-radius:14px;border:1px solid var(--line);
+  background:rgba(0,0,0,.10);
+}
+.evo-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.evo-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.evo-stat{text-align:center}
+.evo-stat .val{font-size:18px;font-weight:900}
+.evo-stat .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+.score-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:999px;font-size:13px;font-weight:900;
+}
+.score-badge.good{background:rgba(77,227,154,.15);color:var(--good);border:1px solid rgba(77,227,154,.25)}
+.score-badge.warn{background:rgba(255,204,102,.12);color:var(--warn);border:1px solid rgba(255,204,102,.22)}
+.score-badge.bad{background:rgba(255,107,107,.12);color:var(--bad);border:1px solid rgba(255,107,107,.22)}
+
+/* ── SECTION LABELS ─────────────────────────────── */
+.section-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--dim);margin:10px 0 6px;padding:0 2px;
+}
+
+/* ── ERROR / LOADING ────────────────────────────── */
+.error-box{
+  padding:10px 14px;border-radius:14px;
+  border:1px solid rgba(255,107,107,.22);background:rgba(255,107,107,.06);
+  font-size:12.5px;color:var(--bad);margin-bottom:8px;
+}
+.loading-box{
+  padding:16px;text-align:center;color:var(--muted);font-size:13px;
+}
+.spinner{
+  display:inline-block;width:20px;height:20px;border:2px solid var(--line);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:8px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cors-warning{
+  padding:14px;border-radius:14px;border:1px solid rgba(255,204,102,.25);
+  background:rgba(255,204,102,.06);font-size:12.5px;color:var(--warn);line-height:1.6;
+}
+.cors-warning strong{color:var(--accent2);display:block;margin-bottom:4px}
+
+/* ── FAQ ────────────────────────────────────────── */
+.faq-item{
+  padding:12px 14px;border-radius:14px;border:1px solid var(--line);
+  background:rgba(0,0,0,.08);margin-bottom:8px;
+}
+.faq-q{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px}
+.faq-a{font-size:12.5px;color:var(--muted);line-height:1.6}
+.faq-a code{
+  background:rgba(122,162,255,.12);color:var(--accent);
+  padding:1px 6px;border-radius:5px;font-size:12px;font-family:ui-monospace,monospace;
+}
+.faq-table{width:100%;border-collapse:collapse;margin-top:6px}
+.faq-table th,.faq-table td{padding:6px 8px;text-align:left;font-size:12px;border-bottom:1px solid var(--line2)}
+.faq-table th{color:var(--dim);font-weight:700}
+
+/* ── STATUS TAG ─────────────────────────────────── */
+.tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;
+}
+.tag.good{background:rgba(77,227,154,.12);color:var(--good)}
+.tag.warn{background:rgba(255,204,102,.10);color:var(--warn)}
+.tag.bad{background:rgba(255,107,107,.10);color:var(--bad)}
+
+/* ── MISC ───────────────────────────────────────── */
+.note{font-size:11.5px;color:var(--dim);line-height:1.5;margin-top:6px}
+.hidden{display:none!important}
+input:focus,button:focus{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="logo">🌡️</div>
+      <div>
+        <div class="title">Wethr Data Fetcher</div>
+        <div class="subtitle">Temperature Trading · Polymarket WU Logic</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌊 Blue</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('tool')">🧭 Tool</button>
+    <button class="tab" onclick="showPage('faq')">❓ FAQ</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- PAGE: TOOL -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="page-tool">
+
+    <!-- CLOCKS -->
+    <div class="card">
+      <div class="card-title">🕐 Current Times</div>
+      <div class="clocks">
+        <div class="clock-box" id="clock-you">
+          <div class="clock-city">You</div>
+          <div class="clock-time" id="ct-you">--:--</div>
+          <div class="clock-date" id="cd-you">---</div>
+        </div>
+        <div class="clock-box highlight" id="clock-kdal">
+          <div class="clock-city">KDAL</div>
+          <div class="clock-time" id="ct-kdal">--:--</div>
+          <div class="clock-date" id="cd-kdal">---</div>
+        </div>
+        <div class="clock-box highlight" id="clock-kmia">
+          <div class="clock-city">KMIA</div>
+          <div class="clock-time" id="ct-kmia">--:--</div>
+          <div class="clock-date" id="cd-kmia">---</div>
+        </div>
+        <div class="clock-box highlight" id="clock-katl">
+          <div class="clock-city">KATL</div>
+          <div class="clock-time" id="ct-katl">--:--</div>
+          <div class="clock-date" id="cd-katl">---</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API KEY -->
+    <div class="card">
+      <div class="card-title">🔑 API Key</div>
+      <div class="key-row">
+        <input class="key-input" type="password" id="apiKey"
+          placeholder="Paste your Wethr API key here…" autocomplete="off" spellcheck="false"/>
+        <button class="toggle-key" onclick="toggleKeyVisibility()">👁 Show</button>
+      </div>
+      <p class="note">Never stored. Stays in your browser only. Cleared when you close the tab.</p>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="card">
+
+      <!-- DAY SELECT -->
+      <div class="card-title">📅 Day</div>
+      <div class="seg" id="daySeg">
+        <button class="seg-btn active" data-day="today" onclick="setDay('today')">Today</button>
+        <button class="seg-btn" data-day="tomorrow" onclick="setDay('tomorrow')">Tomorrow</button>
+        <button class="seg-btn" data-day="dayafter" onclick="setDay('dayafter')">Day +2</button>
+      </div>
+      <p class="note" id="dayNote" style="margin-top:8px"></p>
+
+      <div class="divider"></div>
+
+      <!-- CITY SELECT -->
+      <div class="card-title">🏙️ City</div>
+      <div class="seg" id="citySeg">
+        <button class="seg-btn active" data-city="ALL" onclick="setCity('ALL')">All Cities</button>
+        <button class="seg-btn" data-city="KDAL" onclick="setCity('KDAL')">🤠 KDAL</button>
+        <button class="seg-btn" data-city="KMIA" onclick="setCity('KMIA')">🌴 KMIA</button>
+        <button class="seg-btn" data-city="KATL" onclick="setCity('KATL')">✈️ KATL</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- FETCH BUTTON -->
+      <button class="fetch-btn" id="fetchBtn" onclick="fetchAll()">
+        ▶ Fetch All Data
+      </button>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results" class="results-wrap"></div>
+
+  </div><!-- /page-tool -->
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- PAGE: FAQ -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="page-faq" class="hidden">
+
+    <div class="card">
+      <div class="card-title">❓ FAQ — Quick Reference</div>
+      <p class="note" style="margin-bottom:12px">Everything you need to remember about this tool and the trading workflow.</p>
+
+      <div class="faq-item">
+        <div class="faq-q">What is run_time?</div>
+        <div class="faq-a">The time the model was <strong>computed</strong>. Not a temperature. Think of it as the "printed on" date of the forecast. HRRR updates every hour, ECMWF twice daily.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What is valid_time?</div>
+        <div class="faq-a">The specific hour being <strong>predicted</strong>. The <code>temperature_f</code> in that row is the expected temperature AT that hour — not the daily high.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Why use only the latest HRRR run?</div>
+        <div class="faq-a">HRRR runs every hour. Older runs are stale. The latest run = the most accurate current forecast. This tool filters to latest run automatically.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Why show 2 ECMWF runs?</div>
+        <div class="faq-a">ECMWF runs twice daily. Comparing Run 1 vs Run 2 tells you if the forecast shifted between runs — this is your <strong>evolution signal</strong>. A 10°F shift = very unstable = likely SKIP.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">How is the Daily High calculated?</div>
+        <div class="faq-a">The API returns hourly rows. This tool takes the <strong>maximum temperature_f</strong> across all rows within the time window.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What are the time windows?</div>
+        <div class="faq-a">
+          <table class="faq-table">
+            <tr><th>Day</th><th>Window</th><th>Why</th></tr>
+            <tr><td>Today</td><td>Midnight → 4PM local</td><td>Full same-day picture</td></tr>
+            <tr><td>Tomorrow</td><td>6AM → 4PM local</td><td>Warming hours only</td></tr>
+            <tr><td>Day +2</td><td>6AM → 4PM local</td><td>Same as tomorrow</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What models are used per day?</div>
+        <div class="faq-a">
+          <table class="faq-table">
+            <tr><th>Day</th><th>Models</th></tr>
+            <tr><td>Today</td><td>HRRR (latest run) + NBM + GFS-MOS</td></tr>
+            <tr><td>Tomorrow / Day+2</td><td>ECMWF-IFS (top 2 runs) + NBM + GFS-MOS</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What is Evolution Score B?</div>
+        <div class="faq-a">
+          Shows how stable the NWS forecast has been across all versions today.
+          <table class="faq-table" style="margin-top:6px">
+            <tr><th>Spread</th><th>Stability</th><th>Score B</th></tr>
+            <tr><td>0–1°F</td><td>Stable ✅</td><td>3</td></tr>
+            <tr><td>2°F</td><td>Medium ⚠️</td><td>2</td></tr>
+            <tr><td>3°F</td><td>Risky ⚠️</td><td>1</td></tr>
+            <tr><td>4°F+</td><td>Unstable ❌</td><td>0</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What is WU Logic? Why does it matter?</div>
+        <div class="faq-a">Polymarket resolves temperature markets using <strong>Weather Underground (WU)</strong> data. WU uses METAR observations only and Local Civil Time. This tool fetches the live WU high using <code>logic=wu</code> so you see exactly what Polymarket is tracking.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What is the Live WU High?</div>
+        <div class="faq-a">The current trading-day high temperature as calculated by Wethr using WU logic. This is the number Polymarket will use to resolve the market. Check this intraday to see where the market is heading.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Why are times shown in UTC AND local?</div>
+        <div class="faq-a">The API always returns UTC. Local time is shown so you can quickly understand when the forecast peak is expected without doing the math yourself.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Is DST handled automatically?</div>
+        <div class="faq-a">Yes. JavaScript's <code>Intl</code> API handles DST automatically for all 3 cities. You never need to adjust times manually — not on March 8 or November 1.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What does "Today" mean if I'm in a different timezone?</div>
+        <div class="faq-a">"Today" always means the <strong>current date in the target city</strong> — not your local date. The city clocks at the top show you exactly what date each city is on right now.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Is my API key stored anywhere?</div>
+        <div class="faq-a">No. It lives only in your browser while the page is open. It is never written to the HTML file, never sent to GitHub, and cleared the moment you close the tab. Paste it fresh each session.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What if I get a CORS error?</div>
+        <div class="faq-a">CORS is a browser security rule that may block API calls from web pages. If you see a CORS error, the results section will show a clear explanation and next steps. The fix is to set up a free Cloudflare Workers proxy.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Polymarket resolution sources</div>
+        <div class="faq-a">
+          <table class="faq-table">
+            <tr><th>City</th><th>Station</th><th>Source</th></tr>
+            <tr><td>Dallas</td><td>KDAL</td><td>Weather Underground</td></tr>
+            <tr><td>Miami</td><td>KMIA</td><td>Weather Underground</td></tr>
+            <tr><td>Atlanta</td><td>KATL</td><td>Weather Underground</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Skip triggers (from your Trader tool)</div>
+        <div class="faq-a">
+          <table class="faq-table">
+            <tr><th>Trigger</th><th>Value</th></tr>
+            <tr><td>Spread &gt; 0.05</td><td>Skip execution</td></tr>
+            <tr><td>Evolution 4°F+</td><td>Skip — unstable</td></tr>
+            <tr><td>Core model spread ≥ 5°F</td><td>Skip — disagreement</td></tr>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-faq -->
+
+</div><!-- /wrap -->
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════════ */
+const API_BASE = 'https://wethr.net/api/v2/';
+
+const CITIES = {
+  KDAL: {
+    name: 'Dallas Love Field',
+    shortName: 'Dallas',
+    timezone: 'America/Chicago',
+    wuUrl: 'https://www.wunderground.com/history/daily/us/tx/dallas/KDAL',
+    emoji: '🤠'
+  },
+  KMIA: {
+    name: 'Miami Intl Airport',
+    shortName: 'Miami',
+    timezone: 'America/New_York',
+    wuUrl: 'https://www.wunderground.com/history/daily/us/fl/miami/KMIA',
+    emoji: '🌴'
+  },
+  KATL: {
+    name: 'Atlanta Hartsfield-Jackson',
+    shortName: 'Atlanta',
+    timezone: 'America/New_York',
+    wuUrl: 'https://www.wunderground.com/history/daily/us/ga/atlanta/KATL',
+    emoji: '✈️'
+  }
+};
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let selectedDay  = 'today';
+let selectedCity = 'ALL';
+
+/* ══════════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════════ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.dataset.theme === 'dark';
+  html.dataset.theme = isDark ? 'blue' : 'dark';
+  document.getElementById('themeBtn').textContent = isDark ? '🌑 Dark' : '🌊 Blue';
+}
+
+/* ══════════════════════════════════════════════════
+   PAGE NAVIGATION
+══════════════════════════════════════════════════ */
+function showPage(page) {
+  document.getElementById('page-tool').classList.toggle('hidden', page !== 'tool');
+  document.getElementById('page-faq').classList.toggle('hidden', page !== 'faq');
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.toLowerCase().includes(page));
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   CLOCKS
+══════════════════════════════════════════════════ */
+function formatClock(date, timezone) {
+  const time = date.toLocaleTimeString('en-US', {
+    timeZone: timezone,
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  });
+  const dateStr = date.toLocaleDateString('en-US', {
+    timeZone: timezone,
+    weekday: 'short', month: 'short', day: 'numeric'
+  });
+  return { time, dateStr };
+}
+
+function updateClocks() {
+  const now = new Date();
+
+  // Your local time
+  const localTime = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const localDate = now.toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('ct-you').textContent = localTime;
+  document.getElementById('cd-you').textContent = localDate;
+
+  // City clocks
+  const pairs = [
+    ['kdal', 'America/Chicago'],
+    ['kmia', 'America/New_York'],
+    ['katl', 'America/New_York']
+  ];
+  pairs.forEach(([id, tz]) => {
+    const {time, dateStr} = formatClock(now, tz);
+    document.getElementById(`ct-${id}`).textContent = time;
+    document.getElementById(`cd-${id}`).textContent = dateStr;
+  });
+
+  updateDayNote();
+}
+
+setInterval(updateClocks, 1000);
+updateClocks();
+
+/* ══════════════════════════════════════════════════
+   DAY / CITY SELECTORS
+══════════════════════════════════════════════════ */
+function setDay(day) {
+  selectedDay = day;
+  document.querySelectorAll('#daySeg .seg-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.day === day);
+  });
+  updateDayNote();
+}
+
+function setCity(city) {
+  selectedCity = city;
+  document.querySelectorAll('#citySeg .seg-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.city === city);
+  });
+}
+
+function updateDayNote() {
+  const note = document.getElementById('dayNote');
+  const cities = selectedCity === 'ALL' ? Object.keys(CITIES) : [selectedCity];
+  const lines = cities.map(code => {
+    const city = CITIES[code];
+    const offset = selectedDay === 'today' ? 0 : selectedDay === 'tomorrow' ? 1 : 2;
+    const dateStr = getCityDateStr(city.timezone, offset);
+    const label = selectedDay === 'today' ? 'Today' : selectedDay === 'tomorrow' ? 'Tomorrow' : 'Day +2';
+    const window = getWindow(city.timezone, dateStr, selectedDay === 'today');
+    return `${code}: ${dateStr} · ${label === 'Today' ? 'midnight' : '6AM'} → 4PM local`;
+  });
+  note.textContent = lines.join(' | ');
+}
+
+/* ══════════════════════════════════════════════════
+   TIME UTILITIES
+══════════════════════════════════════════════════ */
+
+// Get current date in a timezone as 'YYYY-MM-DD', with optional day offset
+function getCityDateStr(timezone, offsetDays = 0) {
+  const now = new Date();
+  const baseDateStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
+  if (offsetDays === 0) return baseDateStr;
+  const [y, m, d] = baseDateStr.split('-').map(Number);
+  const base = new Date(Date.UTC(y, m - 1, d + offsetDays));
+  return base.toISOString().split('T')[0];
+}
+
+// Convert city local hour on a date to UTC ISO string
+function cityHourToUTC(timezone, dateStr, hour) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  // Start with naive guess
+  let utc = new Date(Date.UTC(y, m - 1, d, hour, 0, 0));
+
+  // Iterate to correct for offset
+  for (let i = 0; i < 5; i++) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric', minute: 'numeric', hour12: false
+    }).formatToParts(utc);
+    const tzHour = parseInt(parts.find(p => p.type === 'hour').value);
+    const tzMin  = parseInt(parts.find(p => p.type === 'minute').value);
+    const diff = (hour * 60) - (tzHour * 60 + tzMin);
+    if (Math.abs(diff) < 1) break;
+    utc = new Date(utc.getTime() + diff * 60000);
+  }
+
+  return utc.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+// Format a UTC datetime string to city local time (readable)
+function utcToCity(utcStr, timezone) {
+  const d = new Date(utcStr.replace(' ', 'T') + (utcStr.includes('Z') ? '' : 'Z'));
+  return d.toLocaleString('en-US', {
+    timeZone: timezone,
+    month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+    hour12: true
+  });
+}
+
+// Get UTC time windows for a city/date/daytype
+function getWindow(timezone, dateStr, isToday) {
+  const startHour = isToday ? 0 : 6;
+  const endHour = 16;
+  return {
+    start: cityHourToUTC(timezone, dateStr, startHour),
+    end:   cityHourToUTC(timezone, dateStr, endHour)
+  };
+}
+
+/* ══════════════════════════════════════════════════
+   API
+══════════════════════════════════════════════════ */
+async function apiFetch(endpoint, params, apiKey) {
+  const url = new URL(API_BASE + endpoint);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+
+  const res = await fetch(url.toString(), {
+    headers: { 'Authorization': `Bearer ${apiKey}` }
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+/* ══════════════════════════════════════════════════
+   DATA PROCESSORS
+══════════════════════════════════════════════════ */
+function processHRRR(rows, timezone) {
+  if (!rows.length) return null;
+  const latestRun = rows.reduce((max, r) => r.run_time > max ? r.run_time : max, '');
+  const latest = rows.filter(r => r.run_time === latestRun);
+  const maxRow = latest.reduce((max, r) =>
+    parseFloat(r.temperature_f) > parseFloat(max.temperature_f) ? r : max);
+  return {
+    max: Math.round(parseFloat(maxRow.temperature_f)),
+    runTimeUTC: maxRow.run_time,
+    validTimeUTC: maxRow.valid_time,
+    runTimeLocal: utcToCity(maxRow.run_time, timezone),
+    validTimeLocal: utcToCity(maxRow.valid_time, timezone),
+    model: 'HRRR'
+  };
+}
+
+function processECMWF(rows, timezone) {
+  if (!rows.length) return null;
+  const runs = [...new Set(rows.map(r => r.run_time))].sort().reverse().slice(0, 2);
+  const results = runs.map(run => {
+    const runRows = rows.filter(r => r.run_time === run);
+    const maxRow = runRows.reduce((max, r) =>
+      parseFloat(r.temperature_f) > parseFloat(max.temperature_f) ? r : max);
+    return {
+      runTimeUTC: run,
+      runTimeLocal: utcToCity(run, timezone),
+      max: Math.round(parseFloat(maxRow.temperature_f)),
+      validTimeUTC: maxRow.valid_time,
+      validTimeLocal: utcToCity(maxRow.valid_time, timezone)
+    };
+  });
+
+  const shift = results.length >= 2
+    ? Math.abs(results[0].max - results[1].max)
+    : null;
+
+  let shiftClass = 'good', shiftLabel = '';
+  if (shift !== null) {
+    if (shift <= 1)      { shiftClass = 'good'; shiftLabel = '✅ Stable'; }
+    else if (shift <= 3) { shiftClass = 'warn'; shiftLabel = '⚠️ Shifting'; }
+    else                 { shiftClass = 'bad';  shiftLabel = '❌ Unstable'; }
+  }
+
+  return { run1: results[0], run2: results[1] || null, shift, shiftClass, shiftLabel, model: 'ECMWF-IFS' };
+}
+
+function processSimple(rows, model, timezone) {
+  if (!rows.length) return null;
+  const maxRow = rows.reduce((max, r) =>
+    parseFloat(r.temperature_f) > parseFloat(max.temperature_f) ? r : max);
+  return {
+    max: Math.round(parseFloat(maxRow.temperature_f)),
+    runTimeUTC: maxRow.run_time,
+    validTimeUTC: maxRow.valid_time,
+    runTimeLocal: utcToCity(maxRow.run_time, timezone),
+    validTimeLocal: utcToCity(maxRow.valid_time, timezone),
+    model
+  };
+}
+
+function processEvolution(data) {
+  const highs = data.forecasts.map(f => f.high).filter(h => h !== null);
+  if (!highs.length) return null;
+  const maxHigh = Math.max(...highs);
+  const minHigh = Math.min(...highs);
+  const spread = maxHigh - minHigh;
+
+  let stability, scoreB, cls;
+  if (spread <= 1)      { stability = 'Stable';   scoreB = 3; cls = 'good'; }
+  else if (spread === 2) { stability = 'Medium';   scoreB = 2; cls = 'warn'; }
+  else if (spread === 3) { stability = 'Risky';    scoreB = 1; cls = 'warn'; }
+  else                   { stability = 'Unstable'; scoreB = 0; cls = 'bad'; }
+
+  return { versions: data.total_versions, maxHigh, minHigh, spread, stability, scoreB, cls };
+}
+
+/* ══════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════ */
+function renderModel(data, cssClass, timezone) {
+  if (!data) return `<div class="model-row ${cssClass}"><div class="model-name">${cssClass.replace('-row','').toUpperCase()}</div><div style="color:var(--bad);font-size:12px">No data</div></div>`;
+
+  if (data.model === 'ECMWF-IFS') {
+    const r1 = data.run1;
+    const r2 = data.run2;
+    return `
+    <div class="model-row ecmwf-row">
+      <div class="model-left">
+        <div class="model-name">⚡ ECMWF-IFS</div>
+        <div class="model-meta">
+          <strong>Run 1:</strong> run ${r1.runTimeLocal} · peak ${r1.validTimeLocal}<br>
+          <span style="color:var(--dim);font-size:10.5px">UTC: run ${r1.runTimeUTC} · valid ${r1.validTimeUTC}</span>
+          ${r2 ? `<br><strong>Run 2:</strong> run ${r2.runTimeLocal} · peak ${r2.validTimeLocal}<br>
+          <span style="color:var(--dim);font-size:10.5px">UTC: run ${r2.runTimeUTC} · valid ${r2.validTimeUTC}</span>` : ''}
+          ${data.shift !== null ? `<br><span class="shift-box ${data.shiftClass}">Shift: ${data.shift}°F ${data.shiftLabel}</span>` : ''}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="model-temp">${r1.max}°F</div>
+        ${r2 ? `<div style="font-size:13px;color:var(--muted);margin-top:2px">${r2.max}°F</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  const cssMap = { HRRR: 'hrrr-row', NBM: 'nbm-row', 'GFS-MOS': 'gfs-row' };
+  const cls = cssMap[data.model] || '';
+  return `
+  <div class="model-row ${cls}">
+    <div class="model-left">
+      <div class="model-name">${data.model === 'HRRR' ? '⚡ ' : data.model === 'NBM' ? '🔵 ' : '🟡 '}${data.model}</div>
+      <div class="model-meta">
+        run: ${data.runTimeLocal}<br>
+        peak: ${data.validTimeLocal}<br>
+        <span style="color:var(--dim);font-size:10.5px">UTC run: ${data.runTimeUTC} · valid: ${data.validTimeUTC}</span>
+      </div>
+    </div>
+    <div class="model-temp">${data.max}°F</div>
+  </div>`;
+}
+
+function renderEvolution(evo) {
+  if (!evo) return `<div class="evo-box"><div style="color:var(--bad);font-size:12.5px">Evolution data unavailable</div></div>`;
+
+  const stIcon = evo.cls === 'good' ? '✅' : evo.cls === 'warn' ? '⚠️' : '❌';
+  return `
+  <div class="evo-box">
+    <div class="evo-row">
+      <div>
+        <div class="section-label" style="margin:0 0 4px">📈 Evolution (NWS Versions)</div>
+        <div class="evo-stats">
+          <div class="evo-stat">
+            <div class="val" style="color:var(--text)">${evo.versions}</div>
+            <div class="lbl">Versions</div>
+          </div>
+          <div class="evo-stat">
+            <div class="val" style="color:var(--muted)">${evo.minHigh}–${evo.maxHigh}°F</div>
+            <div class="lbl">High Range</div>
+          </div>
+          <div class="evo-stat">
+            <div class="val" style="color:var(--${evo.cls === 'good' ? 'good' : evo.cls === 'warn' ? 'warn' : 'bad'})">${evo.spread}°F</div>
+            <div class="lbl">Spread</div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="score-badge ${evo.cls}">${stIcon} ${evo.stability}</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--muted)">Score B: <strong style="color:var(--text)">${evo.scoreB}</strong></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLiveWU(data, cityCode) {
+  if (!data || data.error) {
+    return `<div class="live-box" style="border-color:rgba(255,107,107,.2);background:rgba(255,107,107,.05)">
+      <div><div class="live-label">📡 Live WU High</div><div style="color:var(--bad);font-size:12px">${data?.error || 'Unavailable'}</div></div>
+    </div>`;
+  }
+
+  const city = CITIES[cityCode];
+  const highF = data.wethr_high ?? '—';
+  const timeUTC = data.time_of_high_utc ?? '';
+  const timeLocal = timeUTC ? utcToCity(timeUTC, city.timezone) : '—';
+
+  return `
+  <div class="live-box">
+    <div>
+      <div class="live-label">📡 Live WU High (Polymarket Resolution)</div>
+      <div class="live-meta">Peak at: ${timeLocal} · UTC: ${timeUTC}</div>
+    </div>
+    <div class="live-temp">${highF}°F</div>
+  </div>`;
+}
+
+function renderCityResults(cityCode, dayData, liveData) {
+  const city = CITIES[cityCode];
+  const isToday = selectedDay === 'today';
+
+  let modelsHTML = '';
+  if (isToday) {
+    modelsHTML = `
+      <div class="section-label">Today Models</div>
+      ${renderModel(dayData.hrrr, 'hrrr-row', city.timezone)}
+      ${renderModel(dayData.nbm, 'nbm-row', city.timezone)}
+      ${renderModel(dayData.gfsMos, 'gfs-row', city.timezone)}`;
+  } else {
+    modelsHTML = `
+      <div class="section-label">${selectedDay === 'tomorrow' ? 'Tomorrow' : 'Day +2'} Models</div>
+      ${renderModel(dayData.ecmwf, 'ecmwf-row', city.timezone)}
+      ${renderModel(dayData.nbm, 'nbm-row', city.timezone)}
+      ${renderModel(dayData.gfsMos, 'gfs-row', city.timezone)}`;
+  }
+
+  // Core spread check
+  let spreadWarning = '';
+  const temps = isToday
+    ? [dayData.hrrr?.max, dayData.nbm?.max, dayData.gfsMos?.max].filter(t => t != null)
+    : [dayData.ecmwf?.run1?.max, dayData.nbm?.max, dayData.gfsMos?.max].filter(t => t != null);
+
+  if (temps.length >= 2) {
+    const spread = Math.max(...temps) - Math.min(...temps);
+    if (spread >= 5) {
+      spreadWarning = `<div class="error-box">⚠️ Core model spread = ${spread}°F (≥5°F) → likely SKIP in your Trader tool</div>`;
+    }
+  }
+
+  return `
+  <div class="city-section">
+    <div class="city-header">
+      <div class="city-name">${city.emoji} ${cityCode} — ${city.name}</div>
+      <a class="city-wu-link" href="${city.wuUrl}" target="_blank">🔗 WU History</a>
+    </div>
+    ${renderLiveWU(liveData, cityCode)}
+    ${spreadWarning}
+    ${modelsHTML}
+    <div style="margin-top:8px">${renderEvolution(dayData.evolution)}</div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════
+   MAIN FETCH
+══════════════════════════════════════════════════ */
+async function fetchAll() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    alert('Please enter your Wethr API key first.');
+    return;
+  }
+
+  const btn = document.getElementById('fetchBtn');
+  const resultsEl = document.getElementById('results');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Fetching…';
+  resultsEl.innerHTML = '<div class="loading-box"><span class="spinner"></span> Calling Wethr API…</div>';
+
+  const citiesToFetch = selectedCity === 'ALL' ? Object.keys(CITIES) : [selectedCity];
+  const dayOffset = selectedDay === 'today' ? 0 : selectedDay === 'tomorrow' ? 1 : 2;
+  const isToday = selectedDay === 'today';
+
+  try {
+    let html = '';
+
+    for (const cityCode of citiesToFetch) {
+      const city = CITIES[cityCode];
+      const dateStr = getCityDateStr(city.timezone, dayOffset);
+      const window = getWindow(city.timezone, dateStr, isToday);
+
+      resultsEl.innerHTML = `<div class="loading-box"><span class="spinner"></span> Fetching ${cityCode}…</div>`;
+
+      const dayData = {};
+      const models = isToday ? ['HRRR', 'NBM', 'GFS-MOS'] : ['ECMWF-IFS', 'NBM', 'GFS-MOS'];
+
+      // Fetch models
+      for (const model of models) {
+        try {
+          const rows = await apiFetch('forecasts.php', {
+            location_name: cityCode,
+            start_valid_time: window.start,
+            end_valid_time: window.end,
+            model
+          }, apiKey);
+          if (model === 'HRRR')      dayData.hrrr   = processHRRR(rows, city.timezone);
+          if (model === 'ECMWF-IFS') dayData.ecmwf  = processECMWF(rows, city.timezone);
+          if (model === 'NBM')       dayData.nbm    = processSimple(rows, 'NBM', city.timezone);
+          if (model === 'GFS-MOS')   dayData.gfsMos = processSimple(rows, 'GFS-MOS', city.timezone);
+        } catch(e) {
+          console.error(`${cityCode} ${model}:`, e.message);
+        }
+      }
+
+      // Fetch evolution
+      try {
+        const evo = await apiFetch('nws_forecasts.php', {
+          station_code: cityCode,
+          date: dateStr,
+          mode: 'history'
+        }, apiKey);
+        dayData.evolution = processEvolution(evo);
+      } catch(e) {
+        console.error(`${cityCode} evolution:`, e.message);
+      }
+
+      // Fetch live WU high
+      let liveData = null;
+      try {
+        liveData = await apiFetch('observations.php', {
+          station_code: cityCode,
+          mode: 'wethr_high',
+          logic: 'wu'
+        }, apiKey);
+      } catch(e) {
+        liveData = { error: e.message };
+      }
+
+      html += renderCityResults(cityCode, dayData, liveData);
+    }
+
+    // Summary header
+    const dayLabel = selectedDay === 'today' ? 'Today' : selectedDay === 'tomorrow' ? 'Tomorrow' : 'Day +2';
+    const summaryCard = `
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">✅ Results — ${dayLabel} · ${new Date().toLocaleTimeString()}</div>
+      <p class="note">Enter these numbers into your Temperature Trader tool. Live WU High = Polymarket tracking value.</p>
+    </div>`;
+
+    resultsEl.innerHTML = summaryCard + html;
+
+  } catch(e) {
+    // Check if it's a CORS error
+    const isCORS = e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('CORS');
+    if (isCORS) {
+      resultsEl.innerHTML = `
+      <div class="cors-warning">
+        <strong>⚠️ CORS Error — Browser Blocked the API Call</strong>
+        This is a browser security restriction. The Wethr API may not allow calls from web pages directly.
+        <br><br>
+        <strong>Solutions:</strong><br>
+        1. Use Postman on desktop (already set up ✅)<br>
+        2. Set up a free Cloudflare Workers proxy (ask for instructions)<br>
+        3. Test by opening this file locally (file://) instead of via GitHub Pages
+      </div>`;
+    } else {
+      resultsEl.innerHTML = `<div class="error-box">❌ Error: ${e.message}</div>`;
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '▶ Fetch All Data';
+}
+
+/* ══════════════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════════════ */
+function toggleKeyVisibility() {
+  const input = document.getElementById('apiKey');
+  const btn = document.querySelector('.toggle-key');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈 Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁 Show';
+  }
+}
+
+// Allow Enter key to trigger fetch
+document.getElementById('apiKey').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchAll();
+});
+
+// Init day note
+updateDayNote();
+</script>
+</body>
+</html>
