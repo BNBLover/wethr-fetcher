@@ -505,6 +505,7 @@ input:focus,button:focus{outline:2px solid var(--accent);outline-offset:2px}
    CONFIG
 ══════════════════════════════════════════════════ */
 const API_BASE = 'https://wethr.net/api/v2/';
+const PROXY   = 'https://wethr-proxy.xrplove2020.workers.dev/';
 
 const CITIES = {
   KDAL: {
@@ -693,10 +694,13 @@ function getWindow(timezone, dateStr, isToday) {
    API
 ══════════════════════════════════════════════════ */
 async function apiFetch(endpoint, params, apiKey) {
-  const url = new URL(API_BASE + endpoint);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const target = new URL(API_BASE + endpoint);
+  Object.entries(params).forEach(([k, v]) => target.searchParams.set(k, v));
 
-  const res = await fetch(url.toString(), {
+  const proxyUrl = new URL(PROXY);
+  proxyUrl.searchParams.set('url', target.toString());
+
+  const res = await fetch(proxyUrl.toString(), {
     headers: { 'Authorization': `Bearer ${apiKey}` }
   });
 
