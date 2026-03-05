@@ -482,7 +482,7 @@ function procECMWF(rows,tz){
     overlapCount=overlap.length;
     if(overlap.length===0){
       // No shared hours — shift is meaningless
-      sc='dim';sl='⚪ Runs don't overlap';
+      sc='dim';sl="⚪ Runs don't overlap";
     } else {
       const ovSet=new Set(overlap);
       const r1ov=runRows[0].filter(r=>ovSet.has(r.valid_time));
