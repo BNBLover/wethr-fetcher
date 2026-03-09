@@ -132,7 +132,6 @@ body{
 .shift-box.good{background:rgba(77,227,154,.15);color:var(--good);border:1px solid rgba(77,227,154,.2)}
 .shift-box.warn{background:rgba(255,204,102,.12);color:var(--warn);border:1px solid rgba(255,204,102,.2)}
 .shift-box.bad{background:rgba(255,107,107,.12);color:var(--bad);border:1px solid rgba(255,107,107,.2)}
-.shift-box.dim{background:rgba(107,127,160,.10);color:var(--dim);border:1px solid rgba(107,127,160,.2)}
 /* EVOLUTION */
 .evo-box{padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.10)}
 .evo-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
@@ -455,53 +454,38 @@ function procHRRR(rows,tz){
   if(!rows.length) return null;
   const lat=latestRows(rows);
   const mr=maxRow(lat);
-  return{max:Math.round(parseFloat(mr.temperature_f)),
+  return{max:parseFloat(parseFloat(mr.temperature_f).toFixed(1)),
     runL:utcToCity(mr.run_time,tz),peakL:utcToCity(mr.valid_time,tz),
     runU:mr.run_time,peakU:mr.valid_time,model:'HRRR'};
 }
 function procECMWF(rows,tz){
   if(!rows.length) return null;
   const runs=[...new Set(rows.map(r=>r.run_time))].sort().reverse().slice(0,2);
-
-  // Build per-run row sets
   const runRows=runs.map(run=>rows.filter(r=>r.run_time===run));
 
-  // Full max per run (for display — unchanged)
+  // Full max per run (for display)
   const res=runRows.map((rr,i)=>{
     const mr=maxRow(rr);
     return{runL:utcToCity(runs[i],tz),runU:runs[i],
-      max:Math.round(parseFloat(mr.temperature_f)),
-      peakL:utcToCity(mr.valid_time,tz),peakU:mr.valid_time,
-      validTimes:new Set(rr.map(r=>r.valid_time))};
+      max:parseFloat(parseFloat(mr.temperature_f).toFixed(1)),
+      peakL:utcToCity(mr.valid_time,tz),peakU:mr.valid_time};
   });
 
-  // Shift: compare only on overlapping valid_times
-  let shift=null,sc='good',sl='',overlapCount=0;
+  // Shift: simple difference between the two displayed maxes
+  let shift=null,sc='good',sl='';
   if(res.length>=2){
-    const overlap=[...res[0].validTimes].filter(t=>res[1].validTimes.has(t));
-    overlapCount=overlap.length;
-    if(overlap.length===0){
-      // No shared hours — shift is meaningless
-      sc='dim';sl="⚪ Runs don't overlap";
-    } else {
-      const ovSet=new Set(overlap);
-      const r1ov=runRows[0].filter(r=>ovSet.has(r.valid_time));
-      const r2ov=runRows[1].filter(r=>ovSet.has(r.valid_time));
-      const m1=Math.round(parseFloat(maxRow(r1ov).temperature_f));
-      const m2=Math.round(parseFloat(maxRow(r2ov).temperature_f));
-      shift=Math.abs(m1-m2);
-      if(shift<=1){sc='good';sl='✅ Stable';}
-      else if(shift<=3){sc='warn';sl='⚠️ Shifting';}
-      else{sc='bad';sl='❌ Unstable';}
-    }
+    shift=Math.abs(res[0].max-res[1].max);
+    if(shift<=1){sc='good';sl='✅ Stable';}
+    else if(shift<=3){sc='warn';sl='⚠️ Shifting';}
+    else{sc='bad';sl='❌ Unstable';}
   }
-  return{run1:res[0],run2:res[1]||null,shift,shiftClass:sc,shiftLabel:sl,overlapCount,model:'ECMWF-IFS'};
+  return{run1:res[0],run2:res[1]||null,shift,shiftClass:sc,shiftLabel:sl,model:'ECMWF-IFS'};
 }
 function procSimple(rows,model,tz){
   if(!rows.length) return null;
   const lat=latestRows(rows); // FIX: use latest run
   const mr=maxRow(lat);
-  return{max:Math.round(parseFloat(mr.temperature_f)),
+  return{max:parseFloat(parseFloat(mr.temperature_f).toFixed(1)),
     runL:utcToCity(mr.run_time,tz),peakL:utcToCity(mr.valid_time,tz),
     runU:mr.run_time,peakU:mr.valid_time,model};
 }
@@ -521,7 +505,7 @@ function procEvo(data){
 function calcSignal(temps,evo){
   const sp=temps.length>=2?Math.max(...temps)-Math.min(...temps):0;
   const sb=evo?evo.scoreB:3;
-  const cons=temps.length?Math.round(temps.reduce((a,b)=>a+b,0)/temps.length):null;
+  const cons=temps.length?parseFloat((temps.reduce((a,b)=>a+b,0)/temps.length).toFixed(1)):null;
   let cl,lb,rs;
   if(sp>=5||sb===0){cl='bad';lb='🔴 Skip';rs=sp>=5?`Model spread ${sp}°F ≥ 5°F`:`Evolution unstable (Score B: 0)`;}
   else if(sp>=3||sb===1){cl='warn';lb='🟡 Medium Risk';rs=sp>=3?`Model spread ${sp}°F`:`Evolution risky (Score B: 1)`;}
@@ -550,7 +534,7 @@ function rSimple(d,css){
         <span class="utc-row">run UTC: ${d.runU}<br>valid UTC: ${d.peakU}</span>
       </div>
     </div>
-    <div class="model-temp">${d.max}°F</div>
+    <div class="model-temp">${d.max.toFixed(1)}°F</div>
   </div>`;
 }
 function rECMWF(d){
@@ -563,12 +547,12 @@ function rECMWF(d){
         Run 1 — run: ${r1.runL} · peak: ${r1.peakL}<br>
         ${r2?`Run 2 — run: ${r2.runL} · peak: ${r2.peakL}<br>`:''}
         <span class="utc-row">Run 1 UTC — run: ${r1.runU} · valid: ${r1.peakU}<br>${r2?`Run 2 UTC — run: ${r2.runU} · valid: ${r2.peakU}`:''}</span>
-        ${(d.shift!==null||d.shiftLabel)?`<span class="shift-box ${d.shiftClass}">${d.shift!==null?`Shift: ${d.shift}°F `:``}${d.shiftLabel}${d.overlapCount>0?` · ${d.overlapCount}h overlap`:``}</span>`:''}
+        ${(d.shift!==null)?`<span class="shift-box ${d.shiftClass}">Shift: ${d.shift}°F ${d.shiftLabel}</span>`:''}
       </div>
     </div>
     <div style="text-align:right">
-      <div class="model-temp">${r1.max}°F</div>
-      ${r2?`<div style="font-size:13px;color:var(--muted);margin-top:2px">${r2.max}°F</div>`:''}
+      <div class="model-temp">${r1.max.toFixed(1)}°F</div>
+      ${r2?`<div style="font-size:13px;color:var(--muted);margin-top:2px">${r2.max.toFixed(1)}°F</div>`:''}
     </div>
   </div>`;
 }
@@ -599,7 +583,7 @@ function rCity(code,dd,live,itd){
     :[dd.ecmwf?.run1?.max,dd.nbm?.max,dd.gfsMos?.max].filter(t=>t!=null);
   const sig=calcSignal(temps,dd.evolution);
   const labels=itd?['HRRR','NBM','GFS']:['ECMWF','NBM','GFS'];
-  const copyStr=temps.map((t,i)=>`${labels[i]}: ${t}°F`).join(' | ');
+  const copyStr=temps.map((t,i)=>`${labels[i]}: ${t.toFixed(1)}°F`).join(' | ');
   let liveHTML='';
   if(!live||live.error){
     liveHTML=`<div class="live-box" style="border-color:rgba(255,107,107,.2);background:rgba(255,107,107,.05)">
@@ -620,7 +604,7 @@ function rCity(code,dd,live,itd){
     </div>
     <div class="signal ${sig.cl}">
       <div><div class="signal-label">${sig.lb}</div><div class="signal-reason">${sig.rs}</div></div>
-      ${sig.cons!==null?`<div><div class="consensus-temp" style="color:var(--${sig.cl==='good'?'good':sig.cl==='warn'?'warn':'bad'})">${sig.cons}°F</div><div class="consensus-label">Consensus High</div></div>`:''}
+      ${sig.cons!==null?`<div><div class="consensus-temp" style="color:var(--${sig.cl==='good'?'good':sig.cl==='warn'?'warn':'bad'})">${sig.cons.toFixed(1)}°F</div><div class="consensus-label">Consensus High</div></div>`:''}
     </div>
     ${temps.length?`<div class="copy-row"><span class="copy-temps">${copyStr}</span><button class="copy-btn" id="cp-${code}" onclick="copyTemps('${code}',[${temps}])">📋 Copy</button></div>`:''}
     ${liveHTML}
