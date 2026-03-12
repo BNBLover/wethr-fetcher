@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>FirstWethrEdge</title>
+  <style>
+    /* ── THEME: Professional light teal ── */
+    :root{
+      --bg:#f0f4f7;
+      --card:#ffffff;
+      --card2:#f7fafb;
+      --line:#d4e0e8;
+      --line2:#e8f0f4;
+      --text:#1a2638;
+      --muted:#5a7080;
+      --dim:#8a9dac;
+      --accent:#1a8a78;
+      --accent-lt:#e6f5f2;
+      --accent2:#d97b10;
+      --accent2-lt:#fef3e2;
+      --good:#1a8a78;
+      --good-lt:#e6f5f2;
+      --warn:#c97a00;
+      --warn-lt:#fef3e2;
+      --bad:#c0392b;
+      --bad-lt:#fdecea;
+      --shadow:0 2px 12px rgba(26,60,80,.10);
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      --radius:14px;
+    }
+
+    /* ── RESET — overflow containment first ── */
+    *, *::before, *::after { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    /* clip (not hidden) so position:sticky still works correctly */
+    html { overflow-x:clip; -webkit-text-size-adjust:100%; }
+    body {
+      margin:0; overflow-x:clip;
+      color:var(--text);
+      font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+      background:var(--bg);
+      min-height:100vh; font-size:15px; line-height:1.5;
+    }
+
+    /* ── LAYOUT SHELL ── */
+    /* No horizontal padding on the outer wrap — padding lives inside cards */
+    .wrap { max-width:1020px; margin:0 auto; padding:0 0 40px; overflow-x:clip; }
+
+    /* ── STICKY BAR ── */
+    /* Positioned relative to the viewport column, not inside card padding */
+    .stickybar {
+      position:sticky; top:0; z-index:20;
+      background:#fff;
+      border-bottom:2px solid var(--accent);
+      box-shadow:0 2px 8px rgba(26,60,80,.10);
+      padding:10px 14px;
+      display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .brand { display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 auto; overflow:hidden; }
+    .logo {
+      width:38px; height:38px; border-radius:10px; display:grid; place-items:center;
+      font-size:20px; flex-shrink:0;
+      background:linear-gradient(135deg,var(--accent),#12b89a); color:#fff;
+    }
+    .brand-text { min-width:0; overflow:hidden; }
+    .title { font-size:15px; font-weight:800; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sub { font-size:11px; color:var(--muted); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .topright { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .pill { padding:6px 11px; border-radius:999px; border:1px solid var(--line); background:var(--card2); color:var(--muted); font-size:12px; font-weight:600; white-space:nowrap; }
+
+    /* ── CARDS — horizontal padding lives here ── */
+    .grid { display:grid; grid-template-columns:1fr; gap:10px; padding:0 10px; }
+    .card {
+      background:var(--card); border:1px solid var(--line);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:14px 13px;
+      /* prevent any child from overflowing the card boundary */
+      overflow:hidden;
+    }
+
+    /* ── SECTION TITLES ── */
+    .section-title {
+      font-size:11px; letter-spacing:.8px; text-transform:uppercase;
+      color:var(--accent); font-weight:900; margin-bottom:10px;
+      padding-bottom:6px; border-bottom:2px solid var(--accent-lt);
+    }
+    .subtle { color:var(--muted); font-size:13px; line-height:1.5; }
+    .small { color:var(--dim); font-size:11.5px; line-height:1.4; }
+    .divider { height:1px; background:var(--line2); margin:12px 0; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+    /* ── TAGS ── */
+    .tag {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:5px 10px; border-radius:999px;
+      border:1px solid var(--line); background:var(--card2);
+      color:var(--muted); font-size:12px; font-weight:600;
+      /* allow wrapping — do NOT use white-space:nowrap here, it causes overflow */
+      flex-shrink:1; min-width:0;
+    }
+    .tag.good { color:var(--good); border-color:rgba(26,138,120,.3); background:var(--good-lt); }
+    .tag.warn { color:var(--warn); border-color:rgba(201,122,0,.3); background:var(--warn-lt); }
+    .tag.bad  { color:var(--bad);  border-color:rgba(192,57,43,.3);  background:var(--bad-lt); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      cursor:pointer; border:none; font-weight:800; font-size:14px;
+      padding:11px 16px; border-radius:10px;
+      background:linear-gradient(135deg,var(--accent),#12b89a);
+      color:#fff; box-shadow:0 3px 10px rgba(26,138,120,.30);
+      touch-action:manipulation; white-space:nowrap; flex-shrink:0;
+    }
+    .btn:active { transform:scale(.97); }
+    .btn.secondary { color:var(--text); background:#fff; border:1.5px solid var(--line); box-shadow:none; }
+    .btn.mini { padding:7px 11px; font-size:12px; border-radius:8px; }
+
+    /* ── CONTROLS / FORM ── */
+    .controls { display:grid; grid-template-columns:1fr; gap:10px; }
+    @media(min-width:760px){ .controls { grid-template-columns:1.15fr .85fr .7fr; } }
+    label { display:block; color:var(--muted); font-size:12px; font-weight:700; margin-bottom:5px; }
+
+    /* KEY: min-width:0 on all inputs prevents flex/grid overflow */
+    input, select {
+      width:100%; min-width:0; padding:12px 12px;
+      border-radius:10px; border:1.5px solid var(--line); outline:none;
+      background:#fff; color:var(--text); font-size:14px;
+      -webkit-appearance:none; display:block;
+    }
+    input:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(26,138,120,.12); }
+    input.mono { font-family:var(--mono); }
+
+    /* KEY: .inline must allow the input to shrink */
+    .inline { display:flex; gap:8px; align-items:center; width:100%; min-width:0; }
+    .inline input { flex:1 1 0; min-width:0; }
+
+    /* ── INFO BAR ── */
+    .info-bar {
+      display:flex; gap:8px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+      padding:9px 11px; border-radius:10px;
+      border:1px solid var(--line2); background:var(--card2);
+    }
+    .info-main { display:flex; gap:8px; align-items:center; flex-wrap:wrap; min-width:0; flex:1; }
+
+    /* ── DECISION WINDOW PILL ── */
+    .window-pill { padding:5px 11px; border-radius:999px; font-weight:800; font-size:12px; white-space:nowrap; }
+    .window-pill.early    { background:var(--warn-lt); color:var(--warn); border:1px solid rgba(201,122,0,.25); }
+    .window-pill.improving,
+    .window-pill.good     { background:var(--good-lt); color:var(--good); border:1px solid rgba(26,138,120,.25); }
+    .window-pill.late     { background:var(--warn-lt); color:var(--warn); border:1px solid rgba(201,122,0,.25); }
+    .window-pill.unknown  { background:var(--card2); color:var(--muted); border:1px solid var(--line); }
+
+    /* ── PANEL GRID ── */
+    .panelgrid { display:grid; grid-template-columns:1fr; gap:10px; }
+    @media(min-width:900px){ .panelgrid { grid-template-columns:1.2fr .95fr .95fr; } }
+    .subpanel { padding:12px; border-radius:12px; border:1px solid var(--line2); background:var(--card2); overflow:hidden; }
+    .subpanel-title { font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:.6px; font-weight:900; margin-bottom:8px; }
+
+    /* ── MODEL GRID — 3 equal cols, compact on mobile ── */
+    .modelgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .modelbox { padding:9px 8px; border-radius:10px; border:1px solid var(--line); background:#fff; min-width:0; overflow:hidden; }
+    .modelbox .name { color:var(--accent); font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.5px; }
+    .modelbox .num { margin-top:5px; font-size:22px; font-weight:900; color:var(--text); }
+    .muterow { margin-top:3px; color:var(--dim); font-size:10px; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    /* ── KPI BOXES ── */
+    .kpis { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+    @media(min-width:600px){ .kpis { grid-template-columns:repeat(4,1fr); } }
+    .kpi { padding:10px 10px; border-radius:10px; border:1px solid var(--line2); background:var(--card2); min-width:0; }
+    .kpi .lab { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; }
+    .kpi .val { margin-top:5px; font-size:20px; font-weight:900; color:var(--text); }
+    /* kpi can also hold a full-width input (bankroll) */
+    .kpi input { margin-top:5px; }
+
+    /* ── FORECAST LOCK ── */
+    .lock {
+      padding:12px 13px; border-radius:12px; font-weight:800;
+      display:flex; justify-content:space-between; gap:8px; align-items:flex-start; flex-wrap:wrap;
+    }
+    .lock.good { background:var(--good-lt); border:1.5px solid rgba(26,138,120,.3); color:var(--good); }
+    .lock.warn { background:var(--warn-lt); border:1.5px solid rgba(201,122,0,.3);  color:var(--warn); }
+    .lock.bad  { background:var(--bad-lt);  border:1.5px solid rgba(192,57,43,.3);  color:var(--bad);  }
+
+    /* ── ALERT BANNER ── */
+    .alert {
+      padding:13px 13px; border-radius:12px;
+      border:1.5px solid rgba(192,57,43,.35);
+      background:var(--bad-lt); color:var(--bad); font-weight:800; font-size:14px;
+    }
+
+    /* ── TABLES — scroll horizontally inside .tablewrap, never push parent ── */
+    .tablewrap {
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      border:1px solid var(--line); border-radius:12px; background:#fff;
+      /* contain: the scroll context so it never bleeds out */
+      max-width:100%;
+    }
+    table { width:100%; border-collapse:collapse; }
+    th, td {
+      text-align:left; padding:9px 8px;
+      border-bottom:1px solid var(--line2);
+      font-size:12.5px; vertical-align:middle; white-space:nowrap;
+    }
+    th { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.45px; font-weight:700; background:var(--card2); }
+    tr:last-child td { border-bottom:none; }
+    .tight td, .tight th { padding:7px 7px; }
+
+    /* ── SCORE BOXES ── */
+    .scores { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+    @media(min-width:600px){ .scores { grid-template-columns:repeat(5,1fr); } }
+    .scorebox { padding:10px 9px; border-radius:12px; border:1px solid var(--line2); background:var(--card2); text-align:center; }
+    .scorebox .lab { color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:.4px; }
+    .scorebox .num { margin-top:4px; font-size:22px; font-weight:900; color:var(--text); }
+    .microcopy { margin-top:5px; color:var(--dim); font-size:11px; line-height:1.3; }
+
+    /* ── BEST TRADE BOX ── */
+    .best {
+      padding:14px 12px; border-radius:12px;
+      border:2px solid rgba(26,138,120,.25);
+      background:linear-gradient(135deg,var(--good-lt),var(--accent2-lt));
+    }
+
+    /* ── ADVANCED DETAILS ── */
+    details.advanced { border:1px solid var(--line); border-radius:10px; padding:9px 12px; background:var(--card2); }
+    details.advanced summary { cursor:pointer; color:var(--muted); font-weight:800; font-size:13px; user-select:none; }
+
+    /* ── WARNING PILL ── */
+    .warning-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:999px; font-size:11px; font-weight:800; }
+    .warning-pill.bad { color:var(--bad); background:var(--bad-lt); border:1px solid rgba(192,57,43,.25); }
+    .muted-note { font-size:11px; color:var(--dim); }
+
+    /* ── TABLE INPUTS (market buckets) ── */
+    /* Fixed-pixel widths removed — let them flex inside their td */
+    .input-slim, .readonly-slim {
+      width:100%; min-width:0; max-width:100%;
+      padding:8px 7px; font-size:13px;
+    }
+    .readonly-slim { background:var(--card2) !important; color:var(--muted) !important; cursor:default; }
+
+    /* ── FOOTER ── */
+    .footer-note { color:var(--dim); font-size:11px; text-align:center; margin-top:12px; line-height:1.5; padding:0 14px; }
+    .mini { font-size:11px; color:var(--dim); }
+
+    /* ── BUCKET ROW HIGHLIGHTING ── */
+    tr.bucket-strong td { background:rgba(26,138,120,.09); }
+    tr.bucket-strong td:first-child { border-left:4px solid var(--good); padding-left:10px; }
+    tr.bucket-moderate td { background:rgba(201,122,0,.07); }
+    tr.bucket-moderate td:first-child { border-left:4px solid var(--warn); padding-left:10px; }
+    tr.bucket-risky td { background:rgba(192,57,43,.06); }
+    tr.bucket-risky td:first-child { border-left:4px solid var(--bad); padding-left:10px; }
+
+    /* ── SCORE B REASON LABEL ── */
+    .score-b-reason { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; margin-top:5px; white-space:normal; line-height:1.3; }
+    .score-b-reason.api_error,.score-b-reason.too_early,.score-b-reason.no_highs { background:var(--warn-lt); color:var(--warn); border:1px solid rgba(201,122,0,.25); }
+    .score-b-reason.stable    { background:var(--good-lt); color:var(--good); border:1px solid rgba(26,138,120,.25); }
+    .score-b-reason.medium    { background:var(--accent-lt); color:var(--accent); border:1px solid rgba(26,138,120,.2); }
+    .score-b-reason.risky     { background:var(--warn-lt); color:var(--warn); border:1px solid rgba(201,122,0,.25); }
+    .score-b-reason.unstable  { background:var(--bad-lt);  color:var(--bad);  border:1px solid rgba(192,57,43,.25); }
+
+    /* ── VERDICT THRESHOLD LINE ── */
+    .verdict-thresholds { font-size:11px; color:var(--muted); margin-top:6px; font-family:var(--mono); letter-spacing:.2px; }
+    .verdict-thresholds .t-trade { color:var(--good); font-weight:800; }
+    .verdict-thresholds .t-small { color:var(--warn); font-weight:800; }
+    .verdict-thresholds .t-skip  { color:var(--bad);  font-weight:800; }
+    .verdict-provisional { font-size:11px; color:var(--warn); font-weight:800; margin-top:4px; }
+
+    /* ── AUTO-REFRESH ── */
+    .countdown-pill { padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700; font-family:var(--mono); white-space:nowrap; border:1.5px solid var(--line); background:var(--card2); color:var(--muted); cursor:default; transition:background .3s,color .3s; }
+    .countdown-pill.ticking { background:var(--accent-lt); color:var(--accent); border-color:rgba(26,138,120,.3); }
+    .countdown-pill.imminent { background:var(--warn-lt); color:var(--warn); border-color:rgba(201,122,0,.3); }
+    .btn.auto-on { background:linear-gradient(135deg,var(--accent2),#f0930a); box-shadow:0 3px 10px rgba(217,123,16,.30); }
+
+
+
+    /* ── SNAPSHOTS ── */
+    .snapshot-toolbar { display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px; }
+    .snapshot-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .snapshot-empty { padding:18px 14px; border:1px dashed var(--line); border-radius:12px; background:var(--card2); color:var(--muted); text-align:center; }
+
+    .debugbox { margin-top:12px; border:1px solid var(--line); border-radius:12px; background:var(--card2); overflow:hidden; }
+    .debughead { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line2); }
+    .debugtitle { font-size:12px; font-weight:900; color:var(--text); }
+    .debugactions { display:flex; gap:8px; flex-wrap:wrap; }
+    .debugbtn { border:1px solid var(--line); background:#fff; color:var(--text); border-radius:10px; padding:6px 10px; font-size:11px; font-weight:700; cursor:pointer; }
+    .debugbtn:hover { background:var(--accent-lt); }
+    .debuglog { max-height:220px; overflow:auto; padding:10px 12px; font-family:var(--mono); font-size:11px; line-height:1.45; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+    .debugline { padding:6px 0; border-bottom:1px dashed var(--line2); }
+    .debugline:last-child { border-bottom:none; }
+    .debugtime { color:var(--dim); }
+    .debugok { color:var(--good); }
+    .debugwarn { color:var(--warn); }
+    .debugerr { color:var(--bad); }
+
+    /* ── DESKTOP ── */
+    @media(min-width:760px){
+      .grid { padding:0 16px; gap:12px; }
+      .card { padding:18px 16px; }
+      .stickybar { padding:10px 20px; }
+      .modelbox .num { font-size:26px; }
+      th, td { font-size:13px; padding:10px 9px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap" id="mainPage">
+  <div class="stickybar" style="margin-left:0;margin-right:0">
+    <div class="brand"><div class="logo">🌡️</div><div class="brand-text"><div class="title">FirstWethrEdge</div><div class="sub">Polymarket temperature workflow · same-day only · KDAL / KATL / KMIA</div></div></div>
+    <div class="topright"><div class="pill" id="topSummary">City: KDAL · Today</div><span class="countdown-pill" id="countdownPill">Auto-off</span><button class="btn secondary" id="autoBtn" type="button">⏱ Auto</button><button class="btn" id="fetchBtn">Fetch Forecast</button></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="section-title">Setup</div>
+      <div class="controls">
+        <div><label>Wethr API key</label><div class="inline"><input id="apiKey" class="mono" type="password" placeholder="Paste Wethr API key" /><button class="btn secondary" id="toggleKey" type="button">👁</button></div><div class="small">Saved in this browser session only.</div></div>
+        <div><label>City</label><select id="citySel"><option value="KDAL">Dallas (KDAL)</option><option value="KATL">Atlanta (KATL)</option><option value="KMIA">Miami (KMIA)</option></select></div>
+        <div><label>Bankroll ($)</label><input id="bankroll" class="mono" type="number" min="0" step="50" value="300" /></div>
+      </div>
+      <div class="divider"></div>
+      <div class="info-bar">
+        <div class="info-main"><span class="tag">⏰ <strong id="cityContext">KDAL</strong> <span id="cityTime">--:--</span></span><span class="tag">Your time <span id="yourTime">--:--</span></span><span class="window-pill unknown" id="decisionWindowPill">Decision window: —</span></div>
+        <div class="small">Context only, not used in scores.</div>
+      </div>
+      <div class="divider"></div>
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><div class="subtle" id="fetchMeta">No data yet</div><div class="small" id="fetchStatus">Idle</div></div>
+        <details class="advanced"><summary>Advanced settings</summary><div style="margin-top:10px"><label>Proxy URL</label><input id="proxyUrl" class="mono" value="https://wethr-proxy.xrplove2020.workers.dev/" /><div class="small">Only change this if your proxy endpoint changes.</div></div></details>
+      </div>
+      <div class="debugbox">
+        <div class="debughead">
+          <div>
+            <div class="debugtitle">Debug output</div>
+            <div class="small">Shows request flow, target URLs, row counts, and visible fetch errors.</div>
+          </div>
+          <div class="debugactions">
+            <button class="debugbtn" id="copyDebugBtn" type="button">Copy log</button>
+            <button class="debugbtn" id="clearDebugBtn" type="button">Clear</button>
+          </div>
+        </div>
+        <div class="debuglog" id="debugLog">No debug events yet.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Forecast & stability</div>
+      <div class="panelgrid">
+        <div class="subpanel"><div class="subpanel-title">Same-day forecast</div><div class="modelgrid"><div class="modelbox"><div class="name">⚡ HRRR</div><div class="num" id="hrrrVal">—</div><div class="muterow" id="hrrrMeta">No data</div></div><div class="modelbox"><div class="name">🔵 NBM</div><div class="num" id="nbmVal">—</div><div class="muterow" id="nbmMeta">No data</div></div><div class="modelbox"><div class="name">🟡 GFS-MOS</div><div class="num" id="gfsVal">—</div><div class="muterow" id="gfsMeta">No data</div></div></div></div>
+        <div class="subpanel"><div class="subpanel-title">Recent runs</div><div class="tablewrap"><table class="tight"><thead><tr><th>Run</th><th>Max temp</th><th>Peak hour</th></tr></thead><tbody id="hrrrRunsBody"><tr><td colspan="3" class="subtle">No data</td></tr></tbody></table></div><div class="row" style="margin-top:10px"><span class="tag" id="hrrrCluster">Cluster: —</span><span class="tag" id="hrrrStabilityTag">HRRR Stability: —</span></div><div class="small" style="margin-top:8px">Informational only — not used as a separate score.</div></div>
+        <div class="subpanel"><div class="subpanel-title">Stability & lock</div><div class="kpis"><div class="kpi"><div class="lab">Model spread</div><div class="val" id="modelSpread">—</div><div class="small">max − min</div></div><div class="kpi"><div class="lab">NWS versions</div><div class="val" id="nwsVersions">—</div><div class="small">history count</div></div><div class="kpi"><div class="lab">Evolution spread</div><div class="val" id="evoSpread">—</div><div class="small" id="evoStatus">—</div></div><div class="kpi"><div class="lab">Score B</div><div class="val" id="scoreBVal">—</div><div class="small">Evolution only</div></div></div><div class="divider"></div><div class="lock warn" id="forecastLockBox"><div><div id="forecastLockLabel">Forecast Lock: WAIT</div><div class="small" id="forecastLockReason">Need forecast data</div></div><div class="tag" id="consensusTag">Consensus: —</div></div><div class="microcopy" id="waitCopy">WAIT = don’t size up yet; model picture is still messy.</div></div>
+      </div>
+    </div>
+
+    <div class="card"><div class="section-title">Forecast output</div><div class="kpis"><div class="kpi"><div class="lab">Consensus</div><div class="val" id="consensusVal">—</div><div class="small">Average of HRRR, NBM, GFS-MOS</div></div><div class="kpi"><div class="lab">Base bucket</div><div class="val" id="baseBucket">—</div><div class="small">Decimal-aware</div></div><div class="kpi"><div class="lab">Upper candidate</div><div class="val" id="upperCandidate">—</div><div class="small">Shown when decimal bias applies</div></div><div class="kpi"><div class="lab">Live WU high</div><div class="val" id="liveHighVal">—</div><div class="small" id="liveHighMeta">Context only — not used in scores</div></div></div></div>
+
+    <div class="card"><div class="section-title">Market buckets</div><div class="subtle">Open the tool, hit Fetch, type today’s YES prices, done. Bucket center and distance update automatically.</div><div class="tablewrap" style="margin-top:10px"><table id="marketTable"><thead><tr><th>Bucket low</th><th>Bucket high</th><th>YES price</th><th>Center</th><th>Distance</th><th>Warning</th><th></th></tr></thead><tbody id="marketBody"></tbody></table></div><div class="row" style="margin-top:10px"><button class="btn secondary" id="addRowBtn" type="button">➕ Add bucket</button><span class="small">Example: 83–84 means 83.0 ≤ temp &lt; 84.0</span></div></div>
+
+    <div class="card" id="evoMissingBanner" style="display:none"><div class="alert">⛔ NWS evolution data completely unavailable. Cannot score. Try re-fetching in a few minutes.</div></div>
+
+    <div class="card">
+      <div class="section-title">Scores & recommendation</div>
+      <div class="tablewrap"><table><thead><tr><th>Bucket</th><th>Center</th><th>Distance</th><th>Price</th><th>Model</th><th>Evo</th><th>Price Score</th><th>Near</th><th>Total</th></tr></thead><tbody id="scoreBody"><tr><td colspan="9" class="subtle">Add market buckets and fetch forecast</td></tr></tbody></table></div>
+      <div class="divider"></div>
+      <div class="scores"><div class="scorebox"><div class="lab">Score A · Model</div><div class="num" id="scoreABox">—</div><div class="microcopy">How tightly models agree today.</div></div><div class="scorebox"><div class="lab">Score B · Evo</div><div class="num" id="scoreBBox">—</div><div id="scoreBReason" class="score-b-reason" style="display:none"></div><div class="microcopy">How stable the NWS forecast has been.</div></div><div class="scorebox"><div class="lab">Best Price Score</div><div class="num" id="scoreCBox">—</div><div class="microcopy">How cheap the YES price is.</div></div><div class="scorebox"><div class="lab">Best Near Adj</div><div class="num" id="distAdjBox">—</div><div class="microcopy">Distance from consensus to bucket center.</div></div><div class="scorebox"><div class="lab">Best Total</div><div class="num" id="bestTotalBox">—</div><div class="microcopy">Top candidate after all adjustments.</div></div></div>
+      <div class="divider"></div>
+      <div class="best"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><div class="small">Best trade</div><div style="font-size:26px;font-weight:900;margin-top:4px" id="bestTradeBucket">—</div><div class="subtle" id="bestTradeReason">Fetch forecast and enter market buckets.</div></div><div style="text-align:right"><div class="small">Verdict</div><div style="font-size:26px;font-weight:900;margin-top:4px" id="verdictText">—</div><div class="verdict-provisional" id="verdictProvisional" style="display:none">⚠ Provisional — Score B unconfirmed</div><div class="verdict-thresholds"><span class="t-trade">TRADE ≥9</span> · <span class="t-small">SMALL 7–8</span> · <span class="t-skip">SKIP &lt;7</span></div></div></div><div class="divider"></div><div class="kpis"><div class="kpi"><div class="lab">Suggested size</div><div class="val" id="sizeVal">—</div><div class="small" id="sizeTier">—</div></div><div class="kpi"><div class="lab">Cheapest tie-break</div><div class="val" id="tieBreakVal">—</div><div class="small">Used only when totals tie</div></div><div class="kpi"><div class="lab">Execution</div><div class="val">Limit only</div><div class="small">Don’t chase thin books</div></div><div class="kpi"><div class="lab">Price sanity</div><div class="val" id="priceSanityVal">—</div><div class="small">Warning only, not stricter</div></div></div></div>
+    </div>
+  </div>
+  
+  <div class="grid">
+    <div class="card">
+      <div class="section-title">Snapshot</div>
+      <div class="subtle">Save the current forecast verdict and compare changes during the day.</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="snapshotBtn" type="button">💾 Save Snapshot</button>
+        <button class="btn secondary" id="openSnapshotsBtn" type="button">📚 Open Snapshot tab</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-note">Uses Wethr API v2 forecasts.php for HRRR / NBM / GFS-MOS, nws_forecasts.php history for evolution, and observations.php with logic=wu for live high context.</div>
+</div>
+
+<div class="wrap" id="snapshotPage" style="display:none">
+  <div class="stickybar" style="margin-left:0;margin-right:0">
+    <div class="brand"><div class="logo">📚</div><div class="brand-text"><div class="title">Snapshot</div><div class="sub">Saved forecast snapshots from this same HTML file</div></div></div>
+    <div class="topright"><div class="pill" id="snapshotSummary">0 saved snapshots · auto-expire in 12h</div><button class="btn secondary" id="openMainBtn" type="button">← Main</button></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="section-title">Snapshot history</div>
+      <div class="snapshot-toolbar">
+        <div class="subtle">Saved entries expire automatically after 12 hours.</div>
+        <div class="snapshot-actions">
+          <button class="btn secondary mini" id="exportSnapshotsBtn" type="button">⬇ Export CSV</button>
+          <button class="btn secondary mini" id="purgeSnapshotsBtn" type="button">🗑 Purge all data</button>
+        </div>
+      </div>
+      <div id="snapshotEmpty" class="snapshot-empty" style="display:none">No saved snapshots in the last 12 hours.</div>
+      <div class="tablewrap" id="snapshotTableWrap">
+        <table class="tight">
+          <thead>
+            <tr>
+              <th>City</th>
+              <th>City local time</th>
+              <th>Fetch time</th>
+              <th>HRRR</th>
+              <th>NBM</th>
+              <th>GFS-MOS</th>
+              <th>Forecast lock</th>
+              <th>Base bucket</th>
+              <th>Best bucket</th>
+              <th>Verdict</th>
+              <th>Suggested size</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="snapshotBody"><tr><td colspan="12" class="subtle">No saved snapshots yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const API_BASE = 'https://wethr.net/api/v2/';
+  const LS_KEY = 'first_wethr_edge_v2';
+  const SNAPSHOT_KEY = 'first_wethr_edge_snapshots_v1';
+  const SNAPSHOT_TTL_MS = 12 * 60 * 60 * 1000;
+  const CITIES = {KDAL:{name:'Dallas',tz:'America/Chicago'},KATL:{name:'Atlanta',tz:'America/New_York'},KMIA:{name:'Miami',tz:'America/New_York'}};
+  const $ = (id) => document.getElementById(id);
+  const apiKey=$('apiKey'), citySel=$('citySel'), proxyUrl=$('proxyUrl'), fetchBtn=$('fetchBtn'), toggleKey=$('toggleKey'), marketBody=$('marketBody'), addRowBtn=$('addRowBtn'), bankroll=$('bankroll'), snapshotBtn=$('snapshotBtn'), debugLogEl=$('debugLog'), clearDebugBtn=$('clearDebugBtn'), copyDebugBtn=$('copyDebugBtn');
+  const state={fetched:null,live:null,consensus:null,debug:[]};
+  function dbgTime(){return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});}
+  function renderDebug(){if(!debugLogEl)return; if(!state.debug.length){debugLogEl.textContent='No debug events yet.'; return;} debugLogEl.innerHTML=state.debug.map(entry=>`<div class="debugline"><span class="debugtime">[${escapeHtml(entry.time)}]</span> <span class="${entry.level==='error'?'debugerr':entry.level==='warn'?'debugwarn':'debugok'}">${escapeHtml(entry.label)}</span>${entry.detail?`
+${escapeHtml(entry.detail)}`:''}</div>`).join(''); debugLogEl.scrollTop=0;}
+  function addDebug(label,detail='',level='ok'){state.debug.unshift({time:dbgTime(),label,detail,level}); state.debug=state.debug.slice(0,60); renderDebug();}
+  function saveSession(){sessionStorage.setItem('fwe_api_key',apiKey.value.trim());sessionStorage.setItem('fwe_city',citySel.value);sessionStorage.setItem('fwe_proxy',proxyUrl.value.trim());sessionStorage.setItem('fwe_bankroll',bankroll.value);sessionStorage.setItem(LS_KEY,JSON.stringify(getMarketRows()));}
+  function loadSession(){apiKey.value=sessionStorage.getItem('fwe_api_key')||'';citySel.value=sessionStorage.getItem('fwe_city')||'KDAL';proxyUrl.value=sessionStorage.getItem('fwe_proxy')||'https://wethr-proxy.xrplove2020.workers.dev/';bankroll.value=sessionStorage.getItem('fwe_bankroll')||'300';const raw=sessionStorage.getItem(LS_KEY);if(raw){try{const rows=JSON.parse(raw);if(Array.isArray(rows)&&rows.length){marketBody.innerHTML='';rows.forEach(r=>addMarketRow(r.low,r.high,r.price));return;}}catch{}}seedDefaultRows();}
+  function setTopSummary(){$('topSummary').textContent=`City: ${citySel.value} · Today`;$('cityContext').textContent=citySel.value;}
+  function fmtTime(date,tz){return date.toLocaleTimeString([], {timeZone:tz,hour:'numeric',minute:'2-digit'});} function fmtDate(date,tz){return date.toLocaleDateString([], {timeZone:tz,weekday:'short',month:'short',day:'numeric'});} function getCityDateISO(code){return new Date().toLocaleDateString('en-CA',{timeZone:CITIES[code].tz});}
+  function cityHourUTC(tz,dateStr,hour){const [y,m,d]=dateStr.split('-').map(Number);let utc=new Date(Date.UTC(y,m-1,d,hour,0,0));for(let i=0;i<5;i++){const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(utc);const h=parseInt(parts.find(p=>p.type==='hour').value,10);const mn=parseInt(parts.find(p=>p.type==='minute').value,10);const diff=(hour*60)-(h*60+mn);if(Math.abs(diff)<1)break;utc=new Date(utc.getTime()+diff*60000);}return utc.toISOString().replace(/\.\d{3}Z$/,'Z');}
+  function getTodayWindow(code){const tz=CITIES[code].tz;const date=getCityDateISO(code);return{date,start:cityHourUTC(tz,date,0),end:cityHourUTC(tz,date,16)};}
+  function updateClocks(){const code=citySel.value,tz=CITIES[code].tz,now=new Date();$('cityTime').textContent=`${fmtTime(now,tz)} · ${fmtDate(now,tz)}`;$('yourTime').textContent=`${now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} · ${now.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})}`;const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'2-digit',hour12:false}).formatToParts(now);const hr=parseInt(parts.find(p=>p.type==='hour').value,10);let label='Early',cls='early';if(hr>=10&&hr<12){label='Improving';cls='improving';}else if(hr>=12&&hr<=15){label='Good Window';cls='good';}else if(hr>15){label='Late';cls='late';}const pill=$('decisionWindowPill');pill.textContent=`Decision window: ${label}`;pill.className=`window-pill ${cls}`;}
+  async function apiFetch(endpoint,params){const target=new URL(API_BASE+endpoint);Object.entries(params).forEach(([k,v])=>target.searchParams.set(k,v));const proxyBase=(proxyUrl.value||'').trim();const directUrl=target.toString();let finalUrl=directUrl;let mode='direct';if(proxyBase){const proxy=new URL(proxyBase);proxy.searchParams.set('url',directUrl);finalUrl=proxy.toString();mode='proxy';}addDebug(`Request started: ${endpoint}`,`Mode: ${mode}
+Direct: ${directUrl}${proxyBase?`
+Proxy: ${finalUrl}`:''}`,'ok');let res;try{res=await fetch(finalUrl,{headers:{'Authorization':`Bearer ${apiKey.value.trim()}`}});}catch(err){addDebug(`Network error: ${endpoint}`,err.message||String(err),'error');throw err;} let bodyText=''; try{bodyText=await res.clone().text();}catch{} if(!res.ok){let msg=`HTTP ${res.status}`;try{const data=bodyText?JSON.parse(bodyText):null;msg=(data&&(data.error||data.message))||msg;}catch{}addDebug(`Request failed: ${endpoint}`,`Status: ${res.status}
+URL: ${finalUrl}${bodyText?`
+Body: ${bodyText.slice(0,800)}`:''}`,'error');throw new Error(msg);} let data; try{data=bodyText?JSON.parse(bodyText):await res.json();}catch(err){addDebug(`JSON parse failed: ${endpoint}`,`URL: ${finalUrl}
+${err.message||String(err)}${bodyText?`
+Body: ${bodyText.slice(0,800)}`:''}`,'error');throw err;} const summary=Array.isArray(data)?`Rows: ${data.length}`:`Keys: ${Object.keys(data||{}).join(', ')||'none'}`; addDebug(`Request ok: ${endpoint}`,`Status: ${res.status}
+URL: ${finalUrl}
+${summary}`,'ok'); return data;}
+  function latestRows(rows){if(!rows.length)return[];const latest=rows.reduce((mx,r)=>(r.run_time>mx?r.run_time:mx),'');return rows.filter(r=>r.run_time===latest);} function maxRow(rows){return rows.reduce((mx,r)=>parseFloat(r.temperature_f)>parseFloat(mx.temperature_f)?r:mx);} function utcToLocalPretty(utcStr,tz){const d=new Date(utcStr.replace(' ','T')+(utcStr.includes('Z')?'':'Z'));return d.toLocaleString([], {timeZone:tz,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
+  function processSimple(rows,model,tz){if(!rows||!rows.length)return null;const lat=latestRows(rows),mr=maxRow(lat);return{model,max:Number(parseFloat(mr.temperature_f).toFixed(1)),runTime:mr.run_time,validTime:mr.valid_time,runLocal:utcToLocalPretty(mr.run_time,tz),peakLocal:utcToLocalPretty(mr.valid_time,tz)};}
+  function processHRRRRuns(rows,tz){if(!rows||!rows.length)return[];const runs=[...new Set(rows.map(r=>r.run_time))].sort().reverse().slice(0,3);return runs.map(run=>{const subset=rows.filter(r=>r.run_time===run),mr=maxRow(subset);return{run,runLocal:utcToLocalPretty(run,tz),max:Number(parseFloat(mr.temperature_f).toFixed(1)),peakLocal:utcToLocalPretty(mr.valid_time,tz)};});}
+  function processEvolution(data){
+    if(!data||!Array.isArray(data.forecasts)) return{scoreB:null,reason:'api_error',versions:0,spread:null,min:null,max:null,status:'API error',cls:'warn'};
+    const versions=data.total_versions||data.forecasts.length;
+    if(versions<2) return{scoreB:null,reason:'too_early',versions,spread:null,min:null,max:null,status:'Too early',cls:'warn'};
+    const highs=data.forecasts.map(f=>f.high).filter(v=>v!==null&&v!==undefined);
+    if(!highs.length) return{scoreB:null,reason:'no_highs',versions,spread:null,min:null,max:null,status:'No highs yet',cls:'warn'};
+    const max=Math.max(...highs),min=Math.min(...highs),spread=max-min;
+    let status='Stable',scoreB=3,cls='good',reason='stable';
+    if(spread<=1){status='Stable';scoreB=3;cls='good';reason='stable';}
+    else if(spread<=2){status='Medium';scoreB=2;cls='warn';reason='medium';}
+    else if(spread<=3){status='Risky';scoreB=1;cls='warn';reason='risky';}
+    else{status='Unstable';scoreB=0;cls='bad';reason='unstable';}
+    return{versions,min,max,spread,status,scoreB,cls,reason};
+  }
+  function scoreAFromSpread(spread){if(spread===null||spread===undefined)return null;if(spread<=1)return 4;if(spread<=2)return 3;if(spread<=3)return 2;return 0;} function scoreC(price){if(price===null||price===undefined||isNaN(price))return null;if(price<=0.55)return 3;if(price<=0.62)return 2;if(price<=0.67)return 1;return 0;} function distanceAdj(distance){if(distance<=0.25)return 1;if(distance<=0.75)return 0;if(distance<=1.25)return -1;return -2;} function verdictFromTotal(total){if(total>=9)return 'TRADE';if(total>=7)return 'SMALL';return 'SKIP';}
+  function sizeSuggestion(total,br){const bankrollNum=Number(br||0);if(!Number.isFinite(bankrollNum)||bankrollNum<=0)return{size:'—',tier:'—'};if(total>=9)return{size:`$${Math.round(bankrollNum*0.12)}–$${Math.round(bankrollNum*0.15)}`,tier:'Full same-day setup'};if(total===8)return{size:`$${Math.round(bankrollNum*0.08)}–$${Math.round(bankrollNum*0.10)}`,tier:'Strong small'};if(total===7)return{size:`$${Math.round(bankrollNum*0.05)}–$${Math.round(bankrollNum*0.06)}`,tier:'Starter only'};return{size:'$0',tier:'Skip'};}
+  function addMarketRow(low='',high='',price=''){const tr=document.createElement('tr');tr.innerHTML=`<td><input class="mono input-slim low" type="number" step="1" value="${low}"></td><td><input class="mono input-slim high" type="number" step="1" value="${high}"></td><td><input class="mono input-slim price" type="number" step="0.01" min="0" max="1" value="${price ?? ''}"></td><td><input class="mono readonly-slim center" type="text" readonly placeholder="—"></td><td><input class="mono readonly-slim distance" type="text" readonly placeholder="—"></td><td class="warncell"><span class="muted-note">—</span></td><td><button class="btn secondary mini remove" type="button">✕</button></td>`;tr.querySelector('.remove').addEventListener('click',()=>{tr.remove();saveSession();computeScores();});tr.querySelectorAll('input.low,input.high,input.price').forEach(inp=>inp.addEventListener('input',()=>{updateRowGuardrails(tr);saveSession();computeScores();}));marketBody.appendChild(tr);updateRowGuardrails(tr);}
+  function updateRowGuardrails(tr){const low=Number(tr.querySelector('.low').value),high=Number(tr.querySelector('.high').value),priceStr=tr.querySelector('.price').value,price=priceStr===''?null:Number(priceStr);const centerEl=tr.querySelector('.center'),distEl=tr.querySelector('.distance'),warnEl=tr.querySelector('.warncell');if(Number.isFinite(low)&&Number.isFinite(high)&&high>low){const center=((low+high)/2).toFixed(1);centerEl.value=center;distEl.value=state.consensus!==null?Math.abs(state.consensus-Number(center)).toFixed(1):'—';}else{centerEl.value='—';distEl.value='—';}if(price!==null&&Number.isFinite(price)&&price>0.67){warnEl.innerHTML='<span class="warning-pill bad">⚠ Overpriced bucket</span>';}else{warnEl.innerHTML='<span class="muted-note">—</span>';}}
+  function updateAllRowGuardrails(){[...marketBody.querySelectorAll('tr')].forEach(updateRowGuardrails);} function seedDefaultRows(){marketBody.innerHTML='';addMarketRow(82,83,'');addMarketRow(83,84,'');addMarketRow(84,85,'');}
+  function getMarketRows(){return [...marketBody.querySelectorAll('tr')].map(tr=>{const low=Number(tr.querySelector('.low').value),high=Number(tr.querySelector('.high').value),priceStr=tr.querySelector('.price').value,price=priceStr===''?null:Number(priceStr);return{low,high,price};}).filter(r=>Number.isFinite(r.low)&&Number.isFinite(r.high)&&r.high>r.low);}
+  function setVerdictLockBanner(show){$('evoMissingBanner').style.display=show?'block':'none';}
+  function computeForecastLock(modelSpread,evoSpread){if(modelSpread===null||evoSpread===null)return{label:'⚠ WAIT',reason:'Need model and evolution data',cls:'warn'};if(modelSpread<=2&&evoSpread<=2)return{label:'✅ READY',reason:'Model Spread ≤ 2°F and Evolution Spread ≤ 2°F',cls:'good'};if(modelSpread>=4||evoSpread>=4)return{label:'❌ SKIP',reason:'Forecast unstable',cls:'bad'};return{label:'⚠ WAIT',reason:'Forecast not fully locked yet',cls:'warn'};}
+  const REASON_LABELS={api_error:'⚠ API error — using 1 (provisional)',too_early:'⏳ Too early — check back at 9am',no_highs:'⚠ No highs data — using 1 (provisional)',stable:'✅ NWS locked in',medium:'🟡 Minor drift — stay at planned size',risky:'🟠 NWS uncertain — reduce size',unstable:'❌ NWS moving a lot — skip'};
+  const SPREAD_PLAIN={stable:'NWS locked in — full confidence',medium:'Minor drift — proceed at normal size',risky:'NWS uncertain — consider reducing size',unstable:'NWS moving a lot — skip today'};
+  function renderForecast(data){const code=citySel.value,tz=CITIES[code].tz,{hrrr,nbm,gfs,hrrrRuns,evolution,live}=data;$('hrrrVal').textContent=hrrr?`${hrrr.max.toFixed(1)}°F`:'—';$('nbmVal').textContent=nbm?`${nbm.max.toFixed(1)}°F`:'—';$('gfsVal').textContent=gfs?`${gfs.max.toFixed(1)}°F`:'—';$('hrrrMeta').textContent=hrrr?`run ${hrrr.runLocal} · peak ${hrrr.peakLocal}`:'No data';$('nbmMeta').textContent=nbm?`run ${nbm.runLocal} · peak ${nbm.peakLocal}`:'No data';$('gfsMeta').textContent=gfs?`run ${gfs.runLocal} · peak ${gfs.peakLocal}`:'No data';const body=$('hrrrRunsBody');if(!hrrrRuns.length)body.innerHTML='<tr><td colspan="3" class="subtle">No data</td></tr>';else body.innerHTML=hrrrRuns.map(r=>`<tr><td>${r.runLocal}</td><td>${r.max.toFixed(1)}°F</td><td>${r.peakLocal}</td></tr>`).join('');if(hrrrRuns.length){const vals=hrrrRuns.map(r=>r.max),min=Math.min(...vals),max=Math.max(...vals),spread=Number((max-min).toFixed(1));$('hrrrCluster').textContent=`Cluster: ${min.toFixed(1)}–${max.toFixed(1)}°F`;let label='HRRR Stability: Strong',cls='good';if(spread>=3){label='HRRR Stability: Weak';cls='bad';}else if(spread>=2){label='HRRR Stability: Moderate';cls='warn';}const tag=$('hrrrStabilityTag');tag.textContent=label;tag.className=`tag ${cls}`;}else{$('hrrrCluster').textContent='Cluster: —';const tag=$('hrrrStabilityTag');tag.textContent='HRRR Stability: —';tag.className='tag';}const modelVals=[hrrr?.max,nbm?.max,gfs?.max].filter(v=>v!==null&&v!==undefined);const spread=modelVals.length?Number((Math.max(...modelVals)-Math.min(...modelVals)).toFixed(1)):null;$('modelSpread').textContent=spread===null?'—':`${spread.toFixed(1)}°F`;
+    // Evolution display with reason codes
+    if(evolution){
+      $('nwsVersions').textContent=evolution.versions||'—';
+      $('evoSpread').textContent=evolution.spread!==null?`${evolution.spread}°F`:'—';
+      $('evoStatus').textContent=evolution.spread!==null?`${evolution.status} · ${evolution.min}–${evolution.max}°F`:evolution.status;
+      $('scoreBVal').textContent=evolution.scoreB!==null?evolution.scoreB:'—';
+      $('scoreBBox').textContent=evolution.scoreB!==null?evolution.scoreB:'~1';
+      const reasonEl=$('scoreBReason');
+      if(REASON_LABELS[evolution.reason]){reasonEl.textContent=REASON_LABELS[evolution.reason];reasonEl.className=`score-b-reason ${evolution.reason}`;reasonEl.style.display='inline-flex';}
+      else{reasonEl.style.display='none';}
+    }else{$('nwsVersions').textContent='—';$('evoSpread').textContent='—';$('evoStatus').textContent='No evolution data';$('scoreBVal').textContent='—';$('scoreBBox').textContent='~1';const reasonEl=$('scoreBReason');reasonEl.textContent='⚠ API error — using 1 (provisional)';reasonEl.className='score-b-reason api_error';reasonEl.style.display='inline-flex';}
+    const lock=computeForecastLock(spread,evolution?.spread??null);const box=$('forecastLockBox');box.className=`lock ${lock.cls}`;$('forecastLockLabel').textContent=`Forecast Lock: ${lock.label}`;$('forecastLockReason').textContent=lock.reason;$('waitCopy').style.display=lock.cls==='good'?'none':'block';let consensus=null;if(modelVals.length===3)consensus=Number((modelVals.reduce((a,b)=>a+b,0)/3).toFixed(1));state.consensus=consensus;$('consensusVal').textContent=consensus===null?'—':`${consensus.toFixed(1)}°F`;$('consensusTag').textContent=consensus===null?'Consensus: —':`Consensus: ${consensus.toFixed(1)}°F`;if(consensus!==null){const integer=Math.floor(consensus),decimal=Number((consensus-integer).toFixed(1));$('baseBucket').textContent=`${integer}-${integer+1}`;$('upperCandidate').textContent=decimal>=0.3?`${integer+1}-${integer+2}`:'none';}else{$('baseBucket').textContent='—';$('upperCandidate').textContent='—';}if(live&&!live.error){$('liveHighVal').textContent=live.wethr_high!==undefined?`${live.wethr_high}°F`:'—';$('liveHighMeta').textContent=live.time_of_high_utc?`Context only — peak at ${utcToLocalPretty(live.time_of_high_utc,tz)}`:'Context only — not used in scores';}else{$('liveHighVal').textContent='—';$('liveHighMeta').textContent=live?.error?`Context only — ${live.error}`:'Context only — not used in scores';}state.fetched={spread,evolutionScoreB:evolution?.scoreB??null,evolutionReason:evolution?.reason??'api_error',lock,hrrr,nbm,gfs,evolution};state.live=live||null;updateAllRowGuardrails();computeScores();}
+  function bucketRowClass(distance, price){
+    // 🟢 strong: close bucket + cheap price
+    if(distance<=0.25&&price!==null&&price<=0.55) return 'bucket-strong';
+    // 🔴 risky: far bucket OR expensive price
+    if(distance>0.75||( price!==null&&price>0.67)) return 'bucket-risky';
+    // 🟡 moderate: everything in between
+    if(distance<=0.75&&(price===null||price<=0.67)) return 'bucket-moderate';
+    return '';
+  }
+  function computeScores(){const rows=getMarketRows();saveSession();updateAllRowGuardrails();if(!state.fetched||state.consensus===null||!rows.length){$('scoreBody').innerHTML='<tr><td colspan="9" class="subtle">Add market buckets and fetch forecast</td></tr>';$('scoreABox').textContent='—';$('scoreCBox').textContent='—';$('distAdjBox').textContent='—';$('bestTotalBox').textContent='—';$('bestTradeBucket').textContent='—';$('bestTradeReason').textContent='Fetch forecast and enter market buckets.';$('verdictText').textContent='—';$('verdictProvisional').style.display='none';$('sizeVal').textContent='—';$('sizeTier').textContent='—';$('tieBreakVal').textContent='—';$('priceSanityVal').textContent='—';setVerdictLockBanner(false);return;}
+    const scoreA=scoreAFromSpread(state.fetched.spread);$('scoreABox').textContent=scoreA??'—';
+    // Score B with reason-code degradation
+    const scoreBRaw=state.fetched.evolutionScoreB;
+    const scoreBReason=state.fetched.evolutionReason||'api_error';
+    const PROVISIONAL_REASONS=['api_error','too_early','no_highs'];
+    const isProvisional=scoreBRaw===null&&PROVISIONAL_REASONS.includes(scoreBReason);
+    const scoreBUsed=isProvisional?1:(scoreBRaw??null);
+    const hardLocked=scoreBRaw===null&&!isProvisional; // shouldn't happen now but safety net
+    setVerdictLockBanner(hardLocked);
+    const scored=rows.map(r=>{const center=Number(((r.low+r.high)/2).toFixed(1)),distance=Number(Math.abs(state.consensus-center).toFixed(1)),c=scoreC(r.price),dAdj=distanceAdj(distance),total=(scoreA??0)+(scoreBUsed??0)+(c??0)+dAdj;return{...r,center,distance,scoreA,scoreB:scoreBUsed,scoreC:c,distAdj:dAdj,total,overpriced:(r.price!==null&&r.price>0.67)};});
+    scored.sort((a,b)=>(b.total-a.total)||((a.price??999)-(b.price??999))||(a.distance-b.distance));
+    $('scoreBody').innerHTML=scored.map(s=>{const rowCls=bucketRowClass(s.distance,s.price);return`<tr class="${rowCls}"><td>${s.low}-${s.high}${s.overpriced?'<div class="muted-note" style="color:var(--bad)">⚠ overpriced</div>':''}</td><td>${s.center.toFixed(1)}</td><td>${s.distance.toFixed(1)}°F</td><td>${s.price===null?'—':s.price.toFixed(2)}</td><td>${s.scoreA??'—'}</td><td>${isProvisional?'~1':s.scoreB??'—'}</td><td>${s.scoreC??'—'}</td><td>${s.distAdj>0?'+'+s.distAdj:s.distAdj}</td><td><strong>${s.total}</strong></td></tr>`;}).join('');
+    $('priceSanityVal').textContent=scored.some(s=>s.overpriced)?'⚠ Warning':'OK';
+    const best=scored[0],tieCandidates=scored.filter(x=>x.total===best.total),tieBreak=tieCandidates.length>1?'Cheaper YES price wins tie':'No tie';$('scoreCBox').textContent=best.scoreC??'—';$('distAdjBox').textContent=best.distAdj>0?`+${best.distAdj}`:String(best.distAdj);$('bestTotalBox').textContent=best.total;$('bestTradeBucket').textContent=`${best.low}-${best.high}`;
+    // Verdict with provisional cap: if provisional, max is SMALL not TRADE
+    let verdict=state.fetched.lock.label.includes('SKIP')?'SKIP':verdictFromTotal(best.total);
+    if(isProvisional&&verdict==='TRADE') verdict='SMALL';
+    $('verdictText').textContent=verdict;
+    $('verdictProvisional').style.display=isProvisional?'block':'none';
+    $('bestTradeReason').textContent=verdict==='SKIP'?'Forecast unstable or score too weak.':`Best total score. Consensus ${state.consensus.toFixed(1)}°F, distance ${best.distance.toFixed(1)}°F, YES ${best.price===null?'—':best.price.toFixed(2)}.${isProvisional?' Score B provisional — re-fetch to confirm.':''}`;
+    const size=verdict==='SKIP'?{size:'$0',tier:'Skip'}:sizeSuggestion(best.total,bankroll.value);$('sizeVal').textContent=size.size;$('sizeTier').textContent=isProvisional?size.tier+' (provisional)':size.tier;$('tieBreakVal').textContent=tieBreak;}
+  async function fetchForecast(){const key=apiKey.value.trim();if(!key){alert('Enter your Wethr API key first.');return;}state.debug=[];addDebug('Fetch started',`City: ${citySel.value}
+Proxy: ${(proxyUrl.value||'').trim()||'(direct mode)'}`,'ok');saveSession();setTopSummary();updateClocks();const code=citySel.value,tz=CITIES[code].tz,win=getTodayWindow(code);fetchBtn.disabled=true;$('fetchStatus').textContent='Loading';$('fetchMeta').textContent=`${code} · ${win.date} · midnight → 4PM local`;$('scoreBVal').textContent='—';$('scoreBBox').textContent='—';try{const [hrrrRows,nbmRows,gfsRows,evoData,liveData]=await Promise.all([
+      apiFetch('forecasts.php',{location_name:code,start_valid_time:win.start,end_valid_time:win.end,model:'HRRR'}).catch((e)=>{addDebug('HRRR request error',e.message||String(e),'error');return[];}),
+      apiFetch('forecasts.php',{location_name:code,start_valid_time:win.start,end_valid_time:win.end,model:'NBM'}).catch((e)=>{addDebug('NBM request error',e.message||String(e),'error');return[];}),
+      apiFetch('forecasts.php',{location_name:code,start_valid_time:win.start,end_valid_time:win.end,model:'GFS-MOS'}).catch((e)=>{addDebug('GFS-MOS request error',e.message||String(e),'error');return[];}),
+      apiFetch('nws_forecasts.php',{station_code:code,date:win.date,mode:'history'}).catch((e)=>{addDebug('NWS history request error',e.message||String(e),'error');return null;}),
+      apiFetch('observations.php',{station_code:code,mode:'wethr_high',logic:'wu'}).catch((e)=>{addDebug('Observation request error',e.message||String(e),'error');return {error:e.message};})
+    ]);
+    addDebug('Fetch completed',`HRRR rows: ${hrrrRows.length}
+NBM rows: ${nbmRows.length}
+GFS-MOS rows: ${gfsRows.length}
+NWS history: ${evoData?'received':'empty'}
+Observation: ${liveData&&liveData.error?`error (${liveData.error})`:'received'}`,'ok');
+    renderForecast({hrrr:processSimple(hrrrRows,'HRRR',tz),nbm:processSimple(nbmRows,'NBM',tz),gfs:processSimple(gfsRows,'GFS-MOS',tz),hrrrRuns:processHRRRRuns(hrrrRows,tz),evolution:processEvolution(evoData),live:liveData});$('fetchStatus').textContent='Ready';$('fetchMeta').textContent=`Last fetched ${fmtTime(new Date(),tz)} ${CITIES[code].name} time`;}catch(err){addDebug('Fetch failed',err.message||String(err),'error');$('fetchStatus').textContent='Error';$('fetchMeta').textContent=err.message;alert(`Fetch failed: ${err.message}`);}finally{fetchBtn.disabled=false;}}
+
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function escapeCsv(v){const s=String(v??'');return /[",
+]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+  function snapshotDisplayTemp(v){return v==null||v===''?'—':`${v}°`;}
+  function pruneSnapshots(list){const now=Date.now();return (Array.isArray(list)?list:[]).filter(s=>s&&s.ts&&now-Number(s.ts)<=SNAPSHOT_TTL_MS);}
+  function getSnapshots(){try{return pruneSnapshots(JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||'[]'));}catch{return [];}}
+  function writeSnapshots(list){localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(pruneSnapshots(list)));}
+  function openSnapshotTab(){window.location.hash='#snapshots';renderSnapshotPage();}
+  function buildSnapshot(){if(!state.fetched)return null;const cityCode=citySel.value;const cityInfo=CITIES[cityCode];const now=new Date();const cityLocalTime=now.toLocaleString('en-US',{timeZone:cityInfo.tz,hour12:true,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});const fetchTimeLocal=now.toLocaleString();const suggestedSize=($('sizeVal').textContent||'').trim()||'—';return {ts:Date.now(),city:cityCode,cityLocalTime,fetchTimeLocal,hrrr:state.fetched.hrrr?.max??null,nbm:state.fetched.nbm?.max??null,gfsMos:state.fetched.gfs?.max??null,forecastLock:($('forecastLockLabel').textContent||'').replace(/^Forecast Lock:\s*/,'').trim()||'—',baseBucket:$('baseBucket').textContent.trim()||'—',bestBucket:$('bestTradeBucket').textContent.trim()||'—',verdict:$('verdictText').textContent.trim()||'—',suggestedSize};}
+  function saveSnapshot(){const snapshot=buildSnapshot();if(!snapshot){alert('Fetch forecast data first.');return;}const snapshots=getSnapshots();snapshots.unshift(snapshot);writeSnapshots(snapshots);openSnapshotTab();}
+  function exportSnapshotsCsv(){const snapshots=getSnapshots();if(!snapshots.length){alert('No saved snapshots to export.');return;}const headers=['City','City local time','Fetch time (local)','HRRR','NBM','GFS-MOS','Forecast lock','Base bucket','Best bucket','Verdict','Suggested size'];const rows=snapshots.map(s=>[s.city,s.cityLocalTime,s.fetchTimeLocal,s.hrrr??'',s.nbm??'',s.gfsMos??'',s.forecastLock,s.baseBucket,s.bestBucket,s.verdict,s.suggestedSize]);const csv=[headers.map(escapeCsv).join(','),...rows.map(row=>row.map(escapeCsv).join(','))].join('
+');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`firstwethredge_snapshots_${new Date().toISOString().slice(0,19).replace(/[T:]/g,'-')}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+  function purgeSnapshots(){if(!confirm('Purge all saved snapshots?'))return;localStorage.removeItem(SNAPSHOT_KEY);renderSnapshotPage();}
+  function deleteSnapshot(ts){const snapshots=getSnapshots().filter(s=>String(s.ts)!==String(ts));writeSnapshots(snapshots);renderSnapshotPage();}
+  function renderSnapshotPage(){const snapshotMode=window.location.hash==='#snapshots';$('mainPage').style.display=snapshotMode?'none':'block';$('snapshotPage').style.display=snapshotMode?'block':'none';if(!snapshotMode)return;const snapshots=getSnapshots();$('snapshotSummary').textContent=`${snapshots.length} saved snapshot${snapshots.length===1?'':'s'} · auto-expire in 12h`;$('snapshotEmpty').style.display=snapshots.length?'none':'block';$('snapshotTableWrap').style.display=snapshots.length?'block':'none';$('snapshotBody').innerHTML=snapshots.length?snapshots.map(s=>`<tr><td>${escapeHtml(s.city)}</td><td>${escapeHtml(s.cityLocalTime)}</td><td>${escapeHtml(s.fetchTimeLocal)}</td><td>${snapshotDisplayTemp(s.hrrr)}</td><td>${snapshotDisplayTemp(s.nbm)}</td><td>${snapshotDisplayTemp(s.gfsMos)}</td><td>${escapeHtml(s.forecastLock||'—')}</td><td>${escapeHtml(s.baseBucket||'—')}</td><td>${escapeHtml(s.bestBucket||'—')}</td><td>${escapeHtml(s.verdict||'—')}</td><td>${escapeHtml(s.suggestedSize||'—')}</td><td><button class="btn secondary mini delete-snapshot-btn" type="button" data-ts="${String(s.ts)}">✖ Delete</button></td></tr>`).join(''):'<tr><td colspan="12" class="subtle">No saved snapshots yet.</td></tr>';
+    document.querySelectorAll('.delete-snapshot-btn').forEach(btn=>btn.addEventListener('click',()=>deleteSnapshot(btn.dataset.ts)));}
+
+  // ── AUTO-REFRESH ──
+  let autoRefreshInterval=null;
+  let autoRefreshSeconds=0;
+  const AUTO_REFRESH_MINUTES=60;
+  const autoBtn=$('autoBtn');
+  const countdownPill=$('countdownPill');
+  function fmtCountdown(sec){const m=Math.floor(sec/60),s=sec%60;return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+  function startAutoRefresh(){autoRefreshSeconds=AUTO_REFRESH_MINUTES*60;autoBtn.textContent='⏹ Stop';autoBtn.classList.add('auto-on');countdownPill.textContent=fmtCountdown(autoRefreshSeconds);countdownPill.classList.add('ticking');countdownPill.classList.remove('imminent');if(autoRefreshInterval)clearInterval(autoRefreshInterval);autoRefreshInterval=setInterval(()=>{autoRefreshSeconds--;if(autoRefreshSeconds<=120){countdownPill.classList.add('imminent');countdownPill.classList.remove('ticking');}else{countdownPill.classList.add('ticking');countdownPill.classList.remove('imminent');}if(autoRefreshSeconds<=0){countdownPill.textContent='Fetching…';fetchForecast().finally(()=>{autoRefreshSeconds=AUTO_REFRESH_MINUTES*60;countdownPill.classList.remove('imminent');countdownPill.classList.add('ticking');});}else{countdownPill.textContent=fmtCountdown(autoRefreshSeconds);}},1000);}
+  function stopAutoRefresh(){if(autoRefreshInterval)clearInterval(autoRefreshInterval);autoRefreshInterval=null;autoRefreshSeconds=0;autoBtn.textContent='⏱ Auto';autoBtn.classList.remove('auto-on');countdownPill.textContent='Auto-off';countdownPill.classList.remove('ticking','imminent');}
+  autoBtn.addEventListener('click',()=>{if(autoRefreshInterval){stopAutoRefresh();}else{startAutoRefresh();}});
+
+  toggleKey.addEventListener('click',()=>{apiKey.type=apiKey.type==='password'?'text':'password';});fetchBtn.addEventListener('click',fetchForecast);snapshotBtn.addEventListener('click',saveSnapshot);$('openSnapshotsBtn').addEventListener('click',openSnapshotTab);$('exportSnapshotsBtn').addEventListener('click',exportSnapshotsCsv);$('purgeSnapshotsBtn').addEventListener('click',purgeSnapshots);$('openMainBtn').addEventListener('click',()=>{window.location.hash='';renderSnapshotPage();});window.addEventListener('hashchange',renderSnapshotPage);window.addEventListener('storage',(e)=>{if(e.key===SNAPSHOT_KEY)renderSnapshotPage();});addRowBtn.addEventListener('click',()=>addMarketRow('','',''));citySel.addEventListener('change',()=>{setTopSummary();updateClocks();saveSession();updateAllRowGuardrails();});[apiKey,proxyUrl,bankroll].forEach(el=>el.addEventListener('input',()=>{saveSession();computeScores();}));clearDebugBtn?.addEventListener('click',()=>{state.debug=[];renderDebug();});copyDebugBtn?.addEventListener('click',async()=>{const txt=state.debug.map(entry=>`[${entry.time}] ${entry.label}${entry.detail?'
+'+entry.detail:''}`).join('
+
+');try{await navigator.clipboard.writeText(txt||'No debug events yet.');addDebug('Copied debug log','Debug log copied to clipboard.','ok');}catch(e){addDebug('Copy failed',e.message||String(e),'error');}});
+  setInterval(updateClocks,1000);loadSession();setTopSummary();updateClocks();computeScores();renderDebug();renderSnapshotPage();
+})();
+</script>
+</body>
+</html>
